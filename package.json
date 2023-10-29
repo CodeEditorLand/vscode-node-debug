@@ -2,124 +2,54 @@
   "name": "node-debug",
   "displayName": "[Deprecated] Node Debug (legacy)",
   "version": "0.0.1",
-  "publisher": "ms-vscode",
+  "private": "false",
   "description": "%extension.description%",
-  "icon": "images/node-debug-icon.png",
   "categories": [
     "Debuggers"
   ],
+  "keywords": [
+    "multi-root ready"
+  ],
+  "homepage": "https://github.com/CodeEditorLand/CodeEditorLand#readme",
+  "bugs": {
+    "url": "https://github.com/CodeEditorLand/CodeEditorLand/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CodeEditorLand/CodeEditorLand.git"
+  },
+  "license": "MIT",
   "author": {
     "name": "Nikola Hristov",
     "email": "nikola@nikolahristov.tech",
     "url": "https://nikolahristov.tech"
   },
-  "license": "MIT",
-  "private": "false",
+  "publisher": "playform",
+  "type": "module",
+  "main": "./dist/extension.js",
   "scripts": {
     "build": "gulp build",
-    "watch": "gulp watch",
-    "test": "gulp compile && mocha --timeout 10000 -u tdd ./out/tests/",
-    "nodemon": "nodemon --debug --nolazy ./dist/nodeDebug.js --server=4711",
-    "prepublish": "gulp build",
-    "vscode:prepublish": "gulp prepare-for-webpack && webpack --mode production --vscode-nls",
-    "package": "gulp prepare-for-webpack && webpack --mode production --vscode-nls && vsce package --yarn",
-    "publish": "gulp prepare-for-webpack && webpack --mode production --vscode-nls && vsce publish",
     "bump": "npm version patch -m 'bump to %s'",
-    "tslint": "gulp tslint",
+    "nodemon": "nodemon --debug --nolazy ./dist/nodeDebug.js --server=4711",
+    "package": "gulp prepare-for-webpack && webpack --mode production --vscode-nls && vsce package --yarn",
+    "prepublishOnly": "TypeScriptESBuild Source/**/*.ts",
+    "prepublish": "gulp build",
+    "publish": "gulp prepare-for-webpack && webpack --mode production --vscode-nls && vsce publish",
+    "test": "gulp compile && mocha --timeout 10000 -u tdd ./out/tests/",
     "translations-export": "gulp translations-export",
-    "prepublishOnly": "TypeScriptESBuild Source/**/*.ts"
-  },
-  "keywords": [
-    "multi-root ready"
-  ],
-  "engines": {
-    "vscode": "1.60.0-insider",
-    "node": ">=10"
-  },
-  "extensionDependencies": [
-    "ms-vscode.node-debug2"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/CodeEditorLand/CodeEditorLand.git"
-  },
-  "bugs": {
-    "url": "https://github.com/CodeEditorLand/CodeEditorLand/issues"
-  },
-  "dependencies": {
-    "glob": "10.3.10",
-    "minimatch": "9.0.3",
-    "request-light": "0.7.0",
-    "source-map": "0.7.4",
-    "vscode-debugadapter": "1.48.0",
-    "vscode-nls": "5.2.0"
-  },
-  "devDependencies": {
-    "@types/mocha": "10.0.3",
-    "@types/node": "20.8.9",
-    "@types/vscode": "1.83.1",
-    "copy-webpack-plugin": "11.0.0",
-    "del": "7.1.0",
-    "gulp": "4.0.2",
-    "gulp-filter": "8.0.0",
-    "gulp-sourcemaps": "3.0.0",
-    "gulp-tsb": "4.0.5",
-    "gulp-tslint": "8.1.4",
-    "gulp-typescript": "5.0.1",
-    "gulp-uglify": "3.0.2",
-    "mocha": "10.2.0",
-    "ts-loader": "~9.5.0",
-    "tslint": "6.0.0",
-    "tslint-microsoft-contrib": "6.2.0",
-    "tsutils": "3.21.0",
-    "typescript": "~5.2.2",
-    "vsce": "1.88.0",
-    "vscode-debugadapter-testsupport": "1.48.0",
-    "vscode-debugprotocol": "1.48.0",
-    "vscode-nls-dev": "4.0.4",
-    "webpack": "5.89.0",
-    "webpack-cli": "~5.1.4",
-    "yargs-parser": "21.1.1",
-    "typescript-esbuild": "0.3.1"
-  },
-  "resolutions": {
-    "gulp/**/yargs-parser": "5.0.0-security.0"
-  },
-  "main": "./dist/extension.js",
-  "activationEvents": [
-    "onDebugResolve:legacy-node",
-    "onCommand:extension.pickNodeProcess",
-    "onCommand:extension.node-debug.toggleSkippingFile",
-    "onCommand:extension.node-debug.attachNodeProcess",
-    "onCommand:extension.node-debug.startAutoAttach"
-  ],
-  "capabilities": {
-    "virtualWorkspaces": false,
-    "untrustedWorkspaces": {
-      "supported": true
-    }
+    "tslint": "gulp tslint",
+    "vscode:prepublish": "gulp prepare-for-webpack && webpack --mode production --vscode-nls",
+    "watch": "gulp watch"
   },
   "contributes": {
-    "configuration": {
-      "title": "Node debug",
-      "properties": {
-        "debug.node.showUseWslIsDeprecatedWarning": {
-          "scope": "window",
-          "type": "boolean",
-          "description": "%debug.node.showUseWslIsDeprecatedWarning.description%",
-          "default": true
-        }
+    "breakpoints": [
+      {
+        "language": "javascript"
+      },
+      {
+        "language": "javascriptreact"
       }
-    },
-    "menus": {
-      "debug/callstack/context": [
-        {
-          "command": "extension.node-debug.toggleSkippingFile",
-          "group": "navigation",
-          "when": "inDebugMode && debugType == 'legacy-node' && callStackItemType == 'stackFrame'"
-        }
-      ]
-    },
+    ],
     "commands": [
       {
         "command": "extension.node-debug.attachNodeProcess",
@@ -132,14 +62,17 @@
         "category": "Debug"
       }
     ],
-    "breakpoints": [
-      {
-        "language": "javascript"
-      },
-      {
-        "language": "javascriptreact"
+    "configuration": {
+      "title": "Node debug",
+      "properties": {
+        "debug.node.showUseWslIsDeprecatedWarning": {
+          "scope": "window",
+          "type": "boolean",
+          "description": "%debug.node.showUseWslIsDeprecatedWarning.description%",
+          "default": true
+        }
       }
-    ],
+    },
     "debuggers": [
       {
         "type": "legacy-node",
@@ -504,11 +437,78 @@
           }
         }
       }
-    ]
+    ],
+    "menus": {
+      "debug/callstack/context": [
+        {
+          "command": "extension.node-debug.toggleSkippingFile",
+          "group": "navigation",
+          "when": "inDebugMode && debugType == 'legacy-node' && callStackItemType == 'stackFrame'"
+        }
+      ]
+    }
   },
-  "homepage": "https://github.com/CodeEditorLand/CodeEditorLand#readme",
-  "type": "module",
+  "activationEvents": [
+    "onDebugResolve:legacy-node",
+    "onCommand:extension.pickNodeProcess",
+    "onCommand:extension.node-debug.toggleSkippingFile",
+    "onCommand:extension.node-debug.attachNodeProcess",
+    "onCommand:extension.node-debug.startAutoAttach"
+  ],
+  "resolutions": {
+    "gulp/**/yargs-parser": "5.0.0-security.0"
+  },
+  "dependencies": {
+    "glob": "10.3.10",
+    "minimatch": "9.0.3",
+    "request-light": "0.7.0",
+    "source-map": "0.7.4",
+    "vscode-debugadapter": "1.48.0",
+    "vscode-nls": "5.2.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "10.0.3",
+    "@types/node": "20.8.9",
+    "@types/vscode": "1.83.1",
+    "copy-webpack-plugin": "11.0.0",
+    "del": "7.1.0",
+    "gulp": "4.0.2",
+    "gulp-filter": "8.0.0",
+    "gulp-sourcemaps": "3.0.0",
+    "gulp-tsb": "4.0.5",
+    "gulp-tslint": "8.1.4",
+    "gulp-typescript": "5.0.1",
+    "gulp-uglify": "3.0.2",
+    "mocha": "10.2.0",
+    "ts-loader": "~9.5.0",
+    "tslint": "6.0.0",
+    "tslint-microsoft-contrib": "6.2.0",
+    "tsutils": "3.21.0",
+    "typescript": "~5.2.2",
+    "typescript-esbuild": "0.3.1",
+    "vsce": "1.88.0",
+    "vscode-debugadapter-testsupport": "1.48.0",
+    "vscode-debugprotocol": "1.48.0",
+    "vscode-nls-dev": "4.0.4",
+    "webpack": "5.89.0",
+    "webpack-cli": "~5.1.4",
+    "yargs-parser": "21.1.1"
+  },
+  "extensionDependencies": [
+    "ms-vscode.node-debug2"
+  ],
+  "engines": {
+    "node": ">=10",
+    "vscode": "1.60.0-insider"
+  },
   "publishConfig": {
     "access": "public"
+  },
+  "icon": "images/node-debug-icon.png",
+  "capabilities": {
+    "virtualWorkspaces": false,
+    "untrustedWorkspaces": {
+      "supported": true
+    }
   }
 }
