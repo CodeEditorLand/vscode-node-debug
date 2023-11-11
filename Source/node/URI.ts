@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as URL from "url";
-import * as PathUtils from "./pathUtilities";
+import * as URL from 'url';
+import * as PathUtils from './pathUtilities';
 
 function isWindows(absPath: string): boolean {
 	return /^[a-zA-Z]\:\\/.test(absPath);
@@ -15,7 +15,7 @@ function stripFirst(path: string, c: string) {
 }
 
 function stripLast(path: string, c: string) {
-	return path[path.length - 1] === c ? path.substr(0, path.length - 1) : path;
+	return path[path.length-1] === c ? path.substr(0, path.length-1) : path;
 }
 
 export class URI {
@@ -28,51 +28,49 @@ export class URI {
 	 * If base is missing or if base is not absolute, an exception is thrown.
 	 */
 	public static file(path: string, base?: string) {
-		if (typeof path !== "string") {
-			throw new Error("string expected");
+
+		if (typeof path !== 'string') {
+			throw new Error('string expected');
 		}
 
 		if (!PathUtils.isAbsolutePath(path)) {
 			if (base) {
+
 				if (PathUtils.isAbsolutePath(base)) {
 					if (isWindows(base)) {
-						path =
-							stripLast(base, "\\") +
-							"\\" +
-							stripFirst(path, "\\");
+						path = stripLast(base, '\\') + '\\' + stripFirst(path, '\\');
 					} else {
-						path =
-							stripLast(base, "/") + "/" + stripFirst(path, "/");
+						path = stripLast(base, '/') + '/' + stripFirst(path, '/');
 					}
 				} else {
-					throw new Error("base path not absolute");
+					throw new Error('base path not absolute');
 				}
 
 				//path = PathUtils.makePathAbsolute(base, path);
 			} else {
-				throw new Error("base path missing");
+				throw new Error('base path missing');
 			}
 		}
 
-		if (isWindows(path)) {
-			// is windows
-			path = path.replace(/\\/g, "/");
+		if (isWindows(path)) {	// is windows
+			path = path.replace(/\\/g, '/');
 		}
 
 		// simplify '/./' -> '/'
-		path = path.replace(/\/\.\//g, "/");
+		path = path.replace(/\/\.\//g, '/');
 
-		if (path[0] !== "/") {
-			path = "/" + path;
+		if (path[0] !== '/') {
+			path = '/' + path;
 		}
 
-		path = encodeURI("file://" + path);
+		path = encodeURI('file://' + path);
 
 		const u = new URI();
 		u._uri = path;
 		try {
 			u._u = URL.parse(path);
-		} catch (e) {
+		}
+		catch (e) {
 			throw new Error(e);
 		}
 		return u;
@@ -82,17 +80,14 @@ export class URI {
 	 * Creates a URI from the given string.
 	 */
 	public static parse(uri: string, base?: string) {
-		if (
-			uri.indexOf("http:") === 0 ||
-			uri.indexOf("https:") === 0 ||
-			uri.indexOf("file:") === 0 ||
-			uri.indexOf("data:") === 0
-		) {
+
+		if (uri.indexOf('http:') === 0 || uri.indexOf('https:') === 0 || uri.indexOf('file:') === 0 || uri.indexOf('data:') === 0 ) {
 			const u = new URI();
 			u._uri = uri;
 			try {
 				u._u = URL.parse(uri);
-			} catch (e) {
+			}
+			catch (e) {
 				throw new Error(e);
 			}
 			return u;
@@ -100,44 +95,41 @@ export class URI {
 		return URI.file(uri, base);
 	}
 
-	constructor() {}
+	constructor() {
+	}
 
 	uri(): string {
 		return this._uri;
 	}
 
 	isFile(): boolean {
-		return this._u.protocol === "file:";
+		return this._u.protocol === 'file:';
 	}
 
 	filePath(): string {
-		let path = <string>this._u.path;
+		let path = <string> this._u.path;
 		path = decodeURI(path);
 
 		if (/^\/[a-zA-Z]\:\//.test(path)) {
-			path = path.substr(1); // remove additional '/'
-			path = path.replace(/\//g, "\\"); // convert slashes to backslashes
+			path = path.substr(1);	// remove additional '/'
+			path = path.replace(/\//g, '\\');	// convert slashes to backslashes
 		}
 		return path;
 	}
 
 	isData() {
-		return (
-			this._u.protocol === "data:" &&
-			this._uri.indexOf("application/json") > 0 &&
-			this._uri.indexOf("base64") > 0
-		);
+		return this._u.protocol === 'data:' && this._uri.indexOf('application/json') > 0 && this._uri.indexOf('base64') > 0;
 	}
 
 	data(): string | null {
-		const pos = this._uri.lastIndexOf(",");
+		const pos = this._uri.lastIndexOf(',');
 		if (pos > 0) {
-			return this._uri.substr(pos + 1);
+			return this._uri.substr(pos+1);
 		}
 		return null;
 	}
 
 	isHTTP(): boolean {
-		return this._u.protocol === "http:" || this._u.protocol === "https:";
+		return this._u.protocol === 'http:' || this._u.protocol === 'https:';
 	}
 }

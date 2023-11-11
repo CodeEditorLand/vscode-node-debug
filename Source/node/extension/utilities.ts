@@ -2,10 +2,10 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-"use strict";
+'use strict';
 
-import * as vscode from "vscode";
-import * as FS from "fs";
+import * as vscode from 'vscode';
+import * as FS from 'fs';
 
 export class Logger {
 	debug(message: string) {
@@ -25,6 +25,7 @@ export function writeToConsole(message: string) {
  * Copy attributes from fromObject to toObject.
  */
 export function extendObject<T extends object>(toObject: T, fromObject: T): T {
+
 	for (let key in fromObject) {
 		if (fromObject.hasOwnProperty(key)) {
 			toObject[key] = fromObject[key];
@@ -35,7 +36,7 @@ export function extendObject<T extends object>(toObject: T, fromObject: T): T {
 
 export function mkdirP(path: string): Promise<void> {
 	return new Promise((resolve, reject) => {
-		FS.mkdir(path, (err) => {
+		FS.mkdir(path, err => {
 			if (err) {
 				return reject(err);
 			}
