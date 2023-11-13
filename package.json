@@ -30,7 +30,7 @@
 		"multi-root ready"
 	],
 	"engines": {
-		"vscode": "1.60.0-insider",
+		"vscode": "^1.60.0-insider",
 		"node": ">=10"
 	},
 	"extensionDependencies": [
@@ -44,42 +44,42 @@
 		"url": "https://github.com/Microsoft/vscode-node-debug/issues"
 	},
 	"dependencies": {
-		"glob": "10.3.10",
-		"minimatch": "9.0.3",
-		"request-light": "0.7.0",
-		"source-map": "0.7.4",
+		"glob": "7.1.6",
+		"minimatch": "3.0.4",
+		"request-light": "0.4.0",
+		"source-map": "0.6.1",
 		"vscode-debugadapter": "1.48.0",
-		"vscode-nls": "5.2.0"
+		"vscode-nls": "5.0.0"
 	},
 	"devDependencies": {
-		"@types/mocha": "10.0.4",
-		"@types/node": "20.9.0",
-		"@types/vscode": "1.84.1",
-		"copy-webpack-plugin": "11.0.0",
-		"del": "7.1.0",
+		"@types/mocha": "8.2.0",
+		"@types/node": "^12.7.3",
+		"@types/vscode": "^1.42.0",
+		"copy-webpack-plugin": "^6.4.1",
+		"del": "5.1.0",
 		"gulp": "4.0.2",
-		"gulp-filter": "9.0.0",
-		"gulp-sourcemaps": "3.0.0",
+		"gulp-filter": "6.0.0",
+		"gulp-sourcemaps": "2.6.5",
 		"gulp-tsb": "4.0.5",
 		"gulp-tslint": "8.1.4",
 		"gulp-typescript": "5.0.1",
 		"gulp-uglify": "3.0.2",
-		"mocha": "10.2.0",
-		"ts-loader": "~9.5.0",
+		"mocha": "8.2.1",
+		"ts-loader": "~6.2.1",
 		"tslint": "6.0.0",
 		"tslint-microsoft-contrib": "6.2.0",
-		"tsutils": "3.21.0",
-		"typescript": "~5.2.2",
-		"vsce": "1.88.0",
+		"tsutils": "3.17.1",
+		"typescript": "~3.7.2",
+		"vsce": "^1.88.0",
 		"vscode-debugadapter-testsupport": "1.48.0",
 		"vscode-debugprotocol": "1.48.0",
-		"vscode-nls-dev": "4.0.4",
-		"webpack": "5.89.0",
-		"webpack-cli": "~5.1.4",
-		"yargs-parser": "21.1.1"
+		"vscode-nls-dev": "3.3.1",
+		"webpack": "^4.44.1",
+		"webpack-cli": "~3.3.12",
+		"yargs-parser": "5.0.0-security.0"
 	},
 	"resolutions": {
-		"gulp/**/yargs-parser": "5.0.0-security.0"
+		"gulp/**/yargs-parser": "^5.0.0-security.0"
 	},
 	"main": "./dist/extension.js",
 	"activationEvents": [
