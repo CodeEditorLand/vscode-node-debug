@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "private": "false",
   "description": "%extension.description%",
+  "homepage": "https://github.com/CodeEditorLand/CodeEditorLand#readme",
   "bugs": {
     "url": "https://github.com/CodeEditorLand/CodeEditorLand/issues"
   },
@@ -18,20 +19,21 @@
     "url": "https://nikolahristov.tech"
   },
   "publisher": "playform",
+  "type": "module",
   "main": "./dist/extension.js",
   "scripts": {
     "build": "gulp build",
     "bump": "npm version patch -m 'bump to %s'",
     "nodemon": "nodemon --debug --nolazy ./dist/nodeDebug.js --server=4711",
     "package": "gulp prepare-for-webpack && webpack --mode production --vscode-nls && vsce package --yarn",
+    "prepublishOnly": "TypeScriptESBuild 'Source/**/*.ts'",
     "prepublish": "gulp build",
     "publish": "gulp prepare-for-webpack && webpack --mode production --vscode-nls && vsce publish",
     "test": "gulp compile && mocha --timeout 10000 -u tdd ./out/tests/",
     "translations-export": "gulp translations-export",
     "tslint": "gulp tslint",
     "vscode:prepublish": "gulp prepare-for-webpack && webpack --mode production --vscode-nls",
-    "watch": "gulp watch",
-    "prepublishOnly": "TypeScriptESBuild 'Source/**/*.ts'"
+    "watch": "gulp watch"
   },
   "contributes": {
     "breakpoints": [
@@ -477,28 +479,26 @@
     "tslint-microsoft-contrib": "6.2.0",
     "tsutils": "3.21.0",
     "typescript": "5.3.2",
+    "typescript-esbuild": "0.3.1",
     "vsce": "1.88.0",
     "vscode-debugadapter-testsupport": "1.48.0",
     "vscode-debugprotocol": "1.48.0",
     "vscode-nls-dev": "4.0.4",
     "webpack": "5.89.0",
     "webpack-cli": "5.1.4",
-    "yargs-parser": "21.1.1",
-    "typescript-esbuild": "0.3.1"
+    "yargs-parser": "21.1.1"
   },
   "extensionDependencies": [
     "ms-vscode.node-debug2"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "icon": "images/node-debug-icon.png",
   "capabilities": {
     "virtualWorkspaces": false,
     "untrustedWorkspaces": {
       "supported": true
     }
-  },
-  "homepage": "https://github.com/CodeEditorLand/CodeEditorLand#readme",
-  "type": "module",
-  "publishConfig": {
-    "access": "public"
   }
 }
