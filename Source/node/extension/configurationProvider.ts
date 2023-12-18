@@ -43,7 +43,7 @@ export class NodeConfigurationProvider
 	resolveDebugConfiguration(
 		folder: vscode.WorkspaceFolder | undefined,
 		config: vscode.DebugConfiguration,
-		token?: vscode.CancellationToken,
+		token?: vscode.CancellationToken
 	): vscode.ProviderResult<vscode.DebugConfiguration> {
 		return this.resolveConfigAsync(folder, config).catch((err) => {
 			return vscode.window
@@ -58,7 +58,7 @@ export class NodeConfigurationProvider
 	private async resolveConfigAsync(
 		folder: vscode.WorkspaceFolder | undefined,
 		config: vscode.DebugConfiguration,
-		token?: vscode.CancellationToken,
+		token?: vscode.CancellationToken
 	): Promise<vscode.DebugConfiguration | undefined> {
 		// if launch.json is missing or empty
 		if (!config.type && !config.request && !config.name) {
@@ -68,8 +68,8 @@ export class NodeConfigurationProvider
 				throw new Error(
 					localize(
 						"program.not.found.message",
-						"Cannot find a program to debug",
-					),
+						"Cannot find a program to debug"
+					)
 				);
 			}
 		}
@@ -165,7 +165,7 @@ export class NodeConfigurationProvider
 
 				config.logFilePath = join(
 					this._extensionContext.logPath,
-					fileName,
+					fileName
 				);
 			}
 		}
@@ -183,11 +183,11 @@ export class NodeConfigurationProvider
 	resolveDebugConfigurationWithSubstitutedVariables(
 		folder: vscode.WorkspaceFolder | undefined,
 		config: vscode.DebugConfiguration,
-		token?: vscode.CancellationToken,
+		token?: vscode.CancellationToken
 	): vscode.ProviderResult<vscode.DebugConfiguration> {
 		return this.resolveConfigWithSubstitutedVariablesAsync(
 			folder,
-			config,
+			config
 		).catch((err) => {
 			return vscode.window
 				.showErrorMessage(err.message, { modal: true })
@@ -200,7 +200,7 @@ export class NodeConfigurationProvider
 	 */
 	private async resolveConfigWithSubstitutedVariablesAsync(
 		folder: vscode.WorkspaceFolder | undefined,
-		config: vscode.DebugConfiguration,
+		config: vscode.DebugConfiguration
 	): Promise<vscode.DebugConfiguration | undefined> {
 		// attach to process by processId
 		if (
@@ -224,7 +224,7 @@ export class NodeConfigurationProvider
 		const associations =
 			vscode.workspace.getConfiguration("files.associations");
 		const extension = vscode.extensions.getExtension<{}>(
-			"ms-vscode.node-debug",
+			"ms-vscode.node-debug"
 		);
 		if (!extension) {
 			throw new Error("Expected to be able to load extension data");
@@ -232,12 +232,12 @@ export class NodeConfigurationProvider
 
 		const handledLanguages =
 			extension.packageJSON.contributes.breakpoints.map(
-				(b) => b.language,
+				(b) => b.language
 			);
 		return Object.keys(associations)
 			.filter(
 				(pattern) =>
-					handledLanguages.indexOf(associations[pattern]) !== -1,
+					handledLanguages.indexOf(associations[pattern]) !== -1
 			)
 			.concat(DEFAULT_JS_PATTERNS);
 	}
@@ -257,15 +257,15 @@ export class NodeConfigurationProvider
 					localize(
 						"useWslDeprecationWarning.title",
 						"Attribute 'useWSL' is deprecated. Please use the 'Remote WSL' extension instead. Click [here]({0}) to learn more.",
-						"https://go.microsoft.com/fwlink/?linkid=2097212",
+						"https://go.microsoft.com/fwlink/?linkid=2097212"
 					),
 					{
 						title: localize(
 							"useWslDeprecationWarning.doNotShowAgain",
-							"Don't Show Again",
+							"Don't Show Again"
 						),
 						id: 1,
-					},
+					}
 				)
 				.then((selected) => {
 					if (!selected) {
@@ -278,7 +278,7 @@ export class NodeConfigurationProvider
 								.update(
 									SHOW_USE_WSL_IS_DEPRECATED_WARNING_SETTING,
 									false,
-									vscode.ConfigurationTarget.Global,
+									vscode.ConfigurationTarget.Global
 								);
 							break;
 					}
@@ -321,8 +321,8 @@ export class NodeConfigurationProvider
 				throw new Error(
 					localize(
 						"NVS_HOME.not.found.message",
-						"Attribute 'runtimeVersion' requires Node.js version manager 'nvs'.",
-					),
+						"Attribute 'runtimeVersion' requires Node.js version manager 'nvs'."
+					)
 				);
 			}
 		}
@@ -335,8 +335,8 @@ export class NodeConfigurationProvider
 					throw new Error(
 						localize(
 							"NVM_HOME.not.found.message",
-							"Attribute 'runtimeVersion' requires Node.js version manager 'nvm-windows' or 'nvs'.",
-						),
+							"Attribute 'runtimeVersion' requires Node.js version manager 'nvm-windows' or 'nvs'."
+						)
 					);
 				}
 				bin = join(nvmHome, `v${config.runtimeVersion}`);
@@ -355,8 +355,8 @@ export class NodeConfigurationProvider
 					throw new Error(
 						localize(
 							"NVM_DIR.not.found.message",
-							"Attribute 'runtimeVersion' requires Node.js version manager 'nvm' or 'nvs'.",
-						),
+							"Attribute 'runtimeVersion' requires Node.js version manager 'nvm' or 'nvs'."
+						)
 					);
 				}
 				bin = join(
@@ -364,7 +364,7 @@ export class NodeConfigurationProvider
 					"versions",
 					"node",
 					`v${config.runtimeVersion}`,
-					"bin",
+					"bin"
 				);
 				versionManagerName = "nvm";
 			}
@@ -385,8 +385,8 @@ export class NodeConfigurationProvider
 					"runtime.version.not.found.message",
 					"Node.js version '{0}' not installed for '{1}'.",
 					config.runtimeVersion,
-					versionManagerName,
-				),
+					versionManagerName
+				)
 			);
 		}
 	}
@@ -397,7 +397,7 @@ export class NodeConfigurationProvider
 function createLaunchConfigFromContext(
 	folder: vscode.WorkspaceFolder | undefined,
 	resolve: boolean,
-	existingConfig?: vscode.DebugConfiguration,
+	existingConfig?: vscode.DebugConfiguration
 ): vscode.DebugConfiguration {
 	const config = {
 		type: "legacy-node",
@@ -422,8 +422,8 @@ function createLaunchConfigFromContext(
 						],
 					},
 					"Launch configuration for '{0}' project created.",
-					"Mern Starter",
-				),
+					"Mern Starter"
+				)
 			);
 		}
 		configureMern(config);
@@ -438,8 +438,8 @@ function createLaunchConfigFromContext(
 				writeToConsole(
 					localize(
 						"program.guessed.from.package.json.explanation",
-						"Launch configuration created based on 'package.json'.",
-					),
+						"Launch configuration created based on 'package.json'."
+					)
 				);
 			}
 		}
@@ -454,12 +454,12 @@ function createLaunchConfigFromContext(
 					isTranspiledLanguage(languageId)
 				) {
 					const wf = vscode.workspace.getWorkspaceFolder(
-						editor.document.uri,
+						editor.document.uri
 					);
 					if (wf && wf === folder) {
 						program = relative(
 							wf.uri.fsPath || "/",
-							editor.document.uri.fsPath || "/",
+							editor.document.uri.fsPath || "/"
 						);
 						if (program && !isAbsolute(program)) {
 							program = join("${workspaceFolder}", program);
@@ -483,15 +483,15 @@ function createLaunchConfigFromContext(
 		if (
 			useSourceMaps ||
 			vscode.workspace.textDocuments.some((document) =>
-				isTranspiledLanguage(document.languageId),
+				isTranspiledLanguage(document.languageId)
 			)
 		) {
 			if (resolve) {
 				writeToConsole(
 					localize(
 						"outFiles.explanation",
-						"Adjust glob pattern(s) in the 'outFiles' attribute so that they cover the generated JavaScript.",
-					),
+						"Adjust glob pattern(s) in the 'outFiles' attribute so that they cover the generated JavaScript."
+					)
 				);
 			}
 
@@ -523,7 +523,7 @@ function createLaunchConfigFromContext(
 
 function loadJSON(
 	folder: vscode.WorkspaceFolder | undefined,
-	file: string,
+	file: string
 ): any {
 	if (folder) {
 		try {
@@ -560,7 +560,7 @@ function isTranspiledLanguage(languagId: string): boolean {
 function guessProgramFromPackage(
 	folder: vscode.WorkspaceFolder | undefined,
 	packageJson: any,
-	resolve: boolean,
+	resolve: boolean
 ): string | undefined {
 	let program: string | undefined;
 
@@ -603,7 +603,7 @@ function guessProgramFromPackage(
 
 async function determineDebugType(
 	config: any,
-	logger: Logger,
+	logger: Logger
 ): Promise<string | null> {
 	if (config.protocol === "legacy") {
 		return "legacy-node";

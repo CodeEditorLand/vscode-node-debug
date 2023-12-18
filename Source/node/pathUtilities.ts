@@ -178,7 +178,7 @@ export function findOnPath(program: string, args_env: any): string | undefined {
  */
 export function findExecutable(
 	program: string,
-	args_env: any,
+	args_env: any
 ): string | undefined {
 	const env = extendObject(extendObject({}, process.env), args_env);
 
@@ -304,7 +304,7 @@ export function multiGlob(patterns: string[], opts?): Promise<string[]> {
 			symlinks: Object.create(null),
 			ignore: [],
 		},
-		opts,
+		opts
 	);
 
 	const isExclude = (pattern) => pattern[0] === "!";
@@ -342,7 +342,7 @@ export function multiGlob(patterns: string[], opts?): Promise<string[]> {
 					}
 				});
 			});
-		}),
+		})
 	).then((results) => {
 		const set = new Set<string>();
 		for (let paths of results) {
@@ -375,7 +375,7 @@ export function multiGlobMatches(patterns: string[], path: string): boolean {
  */
 export function extendObject<T extends object>(
 	toObject: T,
-	fromObject: T | undefined,
+	fromObject: T | undefined
 ): T {
 	if (fromObject) {
 		for (let key in fromObject) {

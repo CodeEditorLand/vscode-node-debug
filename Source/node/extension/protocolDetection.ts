@@ -20,7 +20,7 @@ const InspectorMinNodeVersionLaunch = 80000;
 
 export function detectDebugType(
 	config: any,
-	logger: Logger,
+	logger: Logger
 ): Promise<string | null> {
 	switch (config.request) {
 		case "attach":
@@ -34,7 +34,7 @@ export function detectDebugType(
 			return Promise.resolve(
 				detectProtocolForLaunch(config, logger) === "inspector"
 					? "legacy-node2"
-					: "legacy-node",
+					: "legacy-node"
 			);
 		default:
 			// should not happen
@@ -49,7 +49,7 @@ export function detectDebugType(
  */
 function detectProtocolForAttach(
 	config: any,
-	logger: Logger,
+	logger: Logger
 ): Promise<string | undefined> {
 	const address = config.address || "127.0.0.1";
 	const port = config.port;
@@ -57,7 +57,7 @@ function detectProtocolForAttach(
 	const cleanup = () => {
 		try {
 			socket.write(
-				`"Content-Length: 50\r\n\r\n{"command":"disconnect","type":"request","seq":2}"`,
+				`"Content-Length: 50\r\n\r\n{"command":"disconnect","type":"request","seq":2}"`
 			);
 			socket.end();
 		} catch (e) {
@@ -73,13 +73,13 @@ function detectProtocolForAttach(
 				const dataStr = data.toString();
 				if (dataStr.indexOf("WebSockets request was expected") >= 0) {
 					logger.debug(
-						"Debugging with inspector protocol because it was detected.",
+						"Debugging with inspector protocol because it was detected."
 					);
 					protocol = "inspector";
 				} else {
 					reason = localize(
 						"protocol.switch.legacy.detected",
-						"Debugging with legacy protocol because it was detected.",
+						"Debugging with legacy protocol because it was detected."
 					);
 					protocol = "legacy";
 				}
@@ -95,7 +95,7 @@ function detectProtocolForAttach(
 			socket.on("connect", () => {
 				// Send a safe request to trigger a response from the inspector protocol
 				socket.write(
-					`Content-Length: 102\r\n\r\n{"command":"evaluate","arguments":{"expression":"process.pid","global":true},"type":"request","seq":1}`,
+					`Content-Length: 102\r\n\r\n{"command":"evaluate","arguments":{"expression":"process.pid","global":true},"type":"request","seq":1}`
 				);
 			});
 
@@ -103,14 +103,14 @@ function detectProtocolForAttach(
 				// No data or error received? Bail and let the debug adapter handle it.
 				reject(new Error("timeout"));
 			}, 2000);
-		},
+		}
 	)
 		.catch((err) => {
 			return {
 				reason: localize(
 					"protocol.switch.unknown.error",
 					"Debugging with inspector protocol because Node.js version could not be determined ({0})",
-					err.toString(),
+					err.toString()
 				),
 				protocol: "inspector",
 			};
@@ -128,11 +128,11 @@ function detectProtocolForAttach(
 
 function detectProtocolForLaunch(
 	config: any,
-	logger: Logger,
+	logger: Logger
 ): "legacy" | "inspector" {
 	if (config.runtimeExecutable) {
 		logger.debug(
-			"Debugging with inspector protocol because a runtime executable is set.",
+			"Debugging with inspector protocol because a runtime executable is set."
 		);
 		return "inspector";
 	} else {
@@ -155,7 +155,7 @@ function detectProtocolForLaunch(
 				InspectorMinNodeVersionLaunch
 			) {
 				logger.debug(
-					`Debugging with inspector protocol because Node.js ${config.__nodeVersion} was detected.`,
+					`Debugging with inspector protocol because Node.js ${config.__nodeVersion} was detected.`
 				);
 				return "inspector";
 			} else {
@@ -163,17 +163,17 @@ function detectProtocolForLaunch(
 					localize(
 						"protocol.switch.legacy.version",
 						"Debugging with legacy protocol because Node.js {0} was detected.",
-						config.__nodeVersion,
-					),
+						config.__nodeVersion
+					)
 				);
 				logger.debug(
-					`Debugging with legacy protocol because Node.js ${config.__nodeVersion} was detected.`,
+					`Debugging with legacy protocol because Node.js ${config.__nodeVersion} was detected.`
 				);
 				return "legacy";
 			}
 		} else {
 			logger.debug(
-				"Debugging with inspector protocol because Node.js version could not be determined.",
+				"Debugging with inspector protocol because Node.js version could not be determined."
 			);
 			return "inspector";
 		}
@@ -205,8 +205,8 @@ function detectProtocolForPidWin(pid: number): Promise<string | null> {
 		return ports.indexOf(INSPECTOR_PORT_DEFAULT) >= 0
 			? "inspector"
 			: ports.indexOf(LEGACY_PORT_DEFAULT) >= 0
-			  ? "legacy"
-			  : null;
+				? "legacy"
+				: null;
 	});
 }
 
@@ -248,7 +248,7 @@ function detectProtocolForPidUnix(pid: number): Promise<string | null> {
 		} else {
 			return getPidListeningOnPortUnix(LEGACY_PORT_DEFAULT).then(
 				(legacyProtocolPid) =>
-					legacyProtocolPid === pid ? "legacy" : null,
+					legacyProtocolPid === pid ? "legacy" : null
 			);
 		}
 	});

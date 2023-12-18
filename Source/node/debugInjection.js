@@ -39,7 +39,7 @@
 			return (
 				mirror.propertyNames(
 					PropertyKind.Named | PropertyKind.Indexed,
-					limit,
+					limit
 				).length >= limit
 			);
 		};
@@ -100,7 +100,7 @@
 	 */
 	try {
 		var JSONProtocolSerializer = vm.runInDebugContext(
-			"JSONProtocolSerializer",
+			"JSONProtocolSerializer"
 		);
 
 		JSONProtocolSerializer.prototype.serializeReferencedObjects =
@@ -136,7 +136,7 @@
 	 */
 	DebugCommandProcessor.prototype.dispatch_["vscode_slice"] = function (
 		request,
-		response,
+		response
 	) {
 		var handle = request.arguments.handle;
 		var start = request.arguments.start;
@@ -161,7 +161,7 @@
 			if (mirror.isArray()) {
 				var a = mirror.indexedPropertiesFromRange(
 					start,
-					start + count - 1,
+					start + count - 1
 				);
 				for (var i = 0; i < a.length; i++) {
 					result.push({
@@ -230,7 +230,7 @@
 	 */
 	DebugCommandProcessor.prototype.dispatch_["vscode_lookup"] = function (
 		request,
-		response,
+		response
 	) {
 		var result = this.lookupRequest_(request, response);
 		if (!result && response.body) {
@@ -249,7 +249,7 @@
 	 */
 	DebugCommandProcessor.prototype.dispatch_["vscode_evaluate"] = function (
 		request,
-		response,
+		response
 	) {
 		var result = this.evaluateRequest_(request, response);
 		if (!result) {
@@ -263,7 +263,7 @@
 	 */
 	DebugCommandProcessor.prototype.dispatch_["vscode_scopes"] = function (
 		request,
-		response,
+		response
 	) {
 		var result = this.scopesRequest_(request, response);
 		if (!result) {

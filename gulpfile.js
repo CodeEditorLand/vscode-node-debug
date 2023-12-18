@@ -65,29 +65,29 @@ gulp.task(
 		"internal-minify-scripts",
 		(done) => {
 			done();
-		},
-	),
+		}
+	)
 );
 
 gulp.task(
 	"build",
 	gulp.series("clean", "internal-build", (done) => {
 		done();
-	}),
+	})
 );
 
 gulp.task(
 	"default",
 	gulp.series("build", (done) => {
 		done();
-	}),
+	})
 );
 
 gulp.task(
 	"compile",
 	gulp.series("clean", "internal-build", (done) => {
 		done();
-	}),
+	})
 );
 
 gulp.task("nls-bundle-create", () => {
@@ -111,8 +111,8 @@ gulp.task(
 		"nls-bundle-create",
 		(done) => {
 			done();
-		},
-	),
+		}
+	)
 );
 
 gulp.task(
@@ -121,7 +121,7 @@ gulp.task(
 		//log('Watching build sources...');
 		gulp.watch(watchedSources, gulp.series("internal-build"));
 		done();
-	}),
+	})
 );
 
 gulp.task(
@@ -134,13 +134,10 @@ gulp.task(
 				path.join(webPackedDest, "nls.metadata.json"),
 			])
 			.pipe(
-				nls.createXlfFiles(
-					transifexProjectName,
-					transifexExtensionName,
-				),
+				nls.createXlfFiles(transifexProjectName, transifexExtensionName)
 			)
 			.pipe(gulp.dest(path.join("..", "vscode-translations-export")));
-	}),
+	})
 );
 
 //---- internal
@@ -157,7 +154,7 @@ function compile() {
 				includeContent: inlineSource,
 				// Return relative source map root directories per file.
 				sourceRoot: "../src",
-			}),
+			})
 		);
 	}
 
@@ -175,12 +172,12 @@ gulp.task("tslint", (done) => {
 			tslint({
 				formatter: "prose",
 				rulesDirectory: "node_modules/tslint-microsoft-contrib",
-			}),
+			})
 		)
 		.pipe(
 			tslint.report({
 				emitError: false,
-			}),
+			})
 		);
 	done();
 });

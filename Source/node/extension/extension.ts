@@ -16,8 +16,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.debug.registerDebugConfigurationProvider(
 			"legacy-node",
-			new NodeConfigurationProvider(context),
-		),
+			new NodeConfigurationProvider(context)
+		)
 	);
 
 	// auto attach
@@ -27,36 +27,36 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			"extension.node-debug.toggleSkippingFile",
-			toggleSkippingFile,
-		),
+			toggleSkippingFile
+		)
 	);
 
 	// process picker command
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			"extension.pickNodeProcess",
-			pickProcess,
-		),
+			pickProcess
+		)
 	);
 
 	// attach process command
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			"extension.node-debug.attachNodeProcess",
-			attachProcess,
-		),
+			attachProcess
+		)
 	);
 
 	// cluster
 	context.subscriptions.push(
 		vscode.debug.onDidStartDebugSession((session) =>
-			Cluster.startSession(session),
-		),
+			Cluster.startSession(session)
+		)
 	);
 	context.subscriptions.push(
 		vscode.debug.onDidTerminateDebugSession((session) =>
-			Cluster.stopSession(session),
-		),
+			Cluster.stopSession(session)
+		)
 	);
 }
 
@@ -79,7 +79,7 @@ function toggleSkippingFile(res: string | number): void {
 				: { sourceReference: resource };
 		vscode.debug.activeDebugSession.customRequest(
 			"toggleSkipFileStatus",
-			args,
+			args
 		);
 	}
 }

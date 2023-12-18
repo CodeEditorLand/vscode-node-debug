@@ -19,7 +19,7 @@ const pids: Promise<number>[] = [];
 let autoAttacher: vscode.Disposable | undefined;
 
 export function getPidFromSession(
-	session: vscode.DebugSession,
+	session: vscode.DebugSession
 ): Promise<number> {
 	return new Promise<number>((resolve, e) => {
 		setTimeout(
@@ -43,14 +43,14 @@ export function getPidFromSession(
 							(e) => {
 								clearTimeout(timer);
 								resolve(NaN);
-							},
+							}
 						);
 				} else {
 					clearTimeout(timer);
 					resolve(NaN);
 				}
 			},
-			session.type === "legacy-node2" ? 500 : 100,
+			session.type === "legacy-node2" ? 500 : 100
 		);
 	});
 }
@@ -65,7 +65,7 @@ export function initializeAutoAttach(context: vscode.ExtensionContext) {
 				// try to get pid from newly started node.js debug session
 				pids.push(getPidFromSession(session));
 			}
-		}),
+		})
 	);
 
 	context.subscriptions.push(
@@ -82,15 +82,15 @@ export function initializeAutoAttach(context: vscode.ExtensionContext) {
 								const name = localize(
 									"process.with.pid.label",
 									"Auto attached ({0})",
-									pid,
+									pid
 								);
 								attachToProcess(undefined, name, pid, args);
 							}
-						},
+						}
 					);
 				}
-			},
-		),
+			}
+		)
 	);
 
 	context.subscriptions.push(
@@ -101,8 +101,8 @@ export function initializeAutoAttach(context: vscode.ExtensionContext) {
 					autoAttacher.dispose();
 					autoAttacher = undefined;
 				}
-			},
-		),
+			}
+		)
 	);
 }
 
@@ -118,7 +118,7 @@ export function attachToProcess(
 	pid: number,
 	args: string,
 	baseConfig?: vscode.DebugConfiguration,
-	parentSession?: vscode.DebugSession,
+	parentSession?: vscode.DebugSession
 ) {
 	alreadyAttached(pid).then((isAttached) => {
 		if (isAttached) {
@@ -191,7 +191,7 @@ export function attachToProcess(
 function pollProcesses(
 	rootPid: number,
 	inTerminal: boolean,
-	cb: (pid: number, cmd: string, args: string) => void,
+	cb: (pid: number, cmd: string, args: string) => void
 ): vscode.Disposable {
 	let stopped = false;
 
@@ -215,12 +215,12 @@ function pollProcesses(
 function findChildProcesses(
 	rootPid: number,
 	inTerminal: boolean,
-	cb: (pid: number, cmd: string, args: string) => void,
+	cb: (pid: number, cmd: string, args: string) => void
 ): Promise<void> {
 	function walker(
 		node: ProcessTreeNode,
 		terminal: boolean,
-		terminalPids: (number | undefined)[],
+		terminalPids: (number | undefined)[]
 	) {
 		if (terminalPids.indexOf(node.pid) >= 0) {
 			terminal = true; // found the terminal shell
@@ -241,7 +241,7 @@ function findChildProcesses(
 			const terminals = vscode.window.terminals;
 			if (terminals.length > 0) {
 				Promise.all(
-					terminals.map((terminal) => terminal.processId),
+					terminals.map((terminal) => terminal.processId)
 				).then((terminalPids) => {
 					walker(tree, !inTerminal, terminalPids);
 				});

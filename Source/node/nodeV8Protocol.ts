@@ -322,7 +322,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 
 	public startDispatch(
 		inStream: NodeJS.ReadableStream,
-		outStream: NodeJS.WritableStream,
+		outStream: NodeJS.WritableStream
 	): void {
 		this._sequence = 1;
 		this._writableStream = outStream;
@@ -351,7 +351,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 	public command(
 		command: string,
 		args?: any,
-		cb?: (response: NodeV8Response) => void,
+		cb?: (response: NodeV8Response) => void
 	): void {
 		this._command(command, args, NodeV8Protocol.TIMEOUT, cb);
 	}
@@ -359,7 +359,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 	public command2(
 		command: string,
 		args?: any,
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<NodeV8Response> {
 		return new Promise((resolve, reject) => {
 			this._command(command, args, timeout, (response) => {
@@ -378,69 +378,69 @@ export class NodeV8Protocol extends EE.EventEmitter {
 
 	public backtrace(
 		args: V8BacktraceArgs,
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<V8BacktraceResponse> {
 		return this.command2("backtrace", args);
 	}
 
 	public restartFrame(
 		args: V8RestartFrameArgs,
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<V8RestartFrameResponse> {
 		return this.command2("restartframe", args);
 	}
 
 	public evaluate(
 		args: V8EvaluateArgs,
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<V8EvaluateResponse> {
 		return this.command2("evaluate", args);
 	}
 
 	public scripts(
 		args: V8ScriptsArgs,
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<V8ScriptsResponse> {
 		return this.command2("scripts", args);
 	}
 
 	public setVariableValue(
 		args: V8SetVariableValueArgs,
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<V8SetVariableValueResponse> {
 		return this.command2("setvariablevalue", args);
 	}
 
 	public frame(
 		args: V8FrameArgs,
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<V8FrameResponse> {
 		return this.command2("frame", args);
 	}
 
 	public setBreakpoint(
 		args: V8SetBreakpointArgs,
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<V8SetBreakpointResponse> {
 		return this.command2("setbreakpoint", args);
 	}
 
 	public setExceptionBreak(
 		args: V8SetExceptionBreakArgs,
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<V8SetExceptionBreakResponse> {
 		return this.command2("setexceptionbreak", args);
 	}
 
 	public clearBreakpoint(
 		args: V8ClearBreakpointArgs,
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<NodeV8Response> {
 		return this.command2("clearbreakpoint", args);
 	}
 
 	public listBreakpoints(
-		timeout: number = NodeV8Protocol.TIMEOUT,
+		timeout: number = NodeV8Protocol.TIMEOUT
 	): Promise<V8ListBreakpointsResponse> {
 		return this.command2("listbreakpoints");
 	}
@@ -463,7 +463,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 		command: string,
 		args: any,
 		timeout: number,
-		cb?: (response: NodeV8Response) => void,
+		cb?: (response: NodeV8Response) => void
 	): void {
 		const request: any = {
 			command: command,
@@ -477,8 +477,8 @@ export class NodeV8Protocol extends EE.EventEmitter {
 				cb(
 					new NodeV8Response(
 						request,
-						localize("not.connected", "not connected to runtime"),
-					),
+						localize("not.connected", "not connected to runtime")
+					)
 				);
 			}
 			return;
@@ -491,9 +491,9 @@ export class NodeV8Protocol extends EE.EventEmitter {
 						request,
 						localize(
 							"runtime.unresponsive",
-							"cancelled because Node.js is unresponsive",
-						),
-					),
+							"cancelled because Node.js is unresponsive"
+						)
+					)
 				);
 			}
 			return;
@@ -515,16 +515,16 @@ export class NodeV8Protocol extends EE.EventEmitter {
 							localize(
 								"runtime.timeout",
 								"timeout after {0} ms",
-								timeout,
-							),
-						),
+								timeout
+							)
+						)
 					);
 
 					this._unresponsiveMode = true;
 					this.emitEvent(
 						new NodeV8Event("diagnostic", {
 							reason: `request '${command}' timed out'`,
-						}),
+						})
 					);
 				}
 			}, timeout);
@@ -559,7 +559,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 				if (this._unresponsiveMode) {
 					this._unresponsiveMode = false;
 					this.emitEvent(
-						new NodeV8Event("diagnostic", { reason: "responsive" }),
+						new NodeV8Event("diagnostic", { reason: "responsive" })
 					);
 				}
 				const response = <NodeV8Response>message;
@@ -588,7 +588,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 					const message = this._rawData.toString(
 						"utf8",
 						0,
-						this._contentLength,
+						this._contentLength
 					);
 					this._rawData = this._rawData.slice(this._contentLength);
 					this._contentLength = -1;
@@ -615,7 +615,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 								break;
 							case "Embedding-Host":
 								const match = pair[1].match(
-									/node\sv(\d+)\.(\d+)\.(\d+)/,
+									/node\sv(\d+)\.(\d+)\.(\d+)/
 								);
 								if (match && match.length === 4) {
 									this.embeddedHostVersion =
@@ -627,7 +627,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 									this.embeddedHostVersion = 60500; // TODO this needs to be detected in a smarter way by looking at the V8 version in Electron
 								}
 								const match1 = pair[1].match(
-									/node\s(v\d+\.\d+\.\d+)/,
+									/node\s(v\d+\.\d+\.\d+)/
 								);
 								if (match1 && match1.length === 2) {
 									this.hostVersion = match1[1];
@@ -639,7 +639,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 						}
 					}
 					this._rawData = this._rawData.slice(
-						idx + NodeV8Protocol.TWO_CRLF.length,
+						idx + NodeV8Protocol.TWO_CRLF.length
 					);
 					continue; // try to handle a complete message
 				}
