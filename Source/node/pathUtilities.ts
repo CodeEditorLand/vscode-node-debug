@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as Path from "path";
-import * as FS from "fs";
 import * as CP from "child_process";
+import * as FS from "fs";
+import * as Path from "path";
 const glob = require("glob");
 const minimatch = require("minimatch");
 
@@ -80,7 +80,7 @@ export function pathCompare(path1: string, path2: string): boolean {
  * Since a drive letter of a Windows path cannot be looked up, realPath normalizes the drive letter to lower case.
  */
 export function realPath(path: string): string | null {
-	let dir = Path.dirname(path);
+	const dir = Path.dirname(path);
 	if (path === dir) {
 		// end recursion
 		// is this an upper case drive letter?
@@ -89,13 +89,13 @@ export function realPath(path: string): string | null {
 		}
 		return path;
 	}
-	let name = Path.basename(path).toLowerCase();
+	const name = Path.basename(path).toLowerCase();
 	try {
-		let entries = FS.readdirSync(dir);
-		let found = entries.filter((e) => e.toLowerCase() === name); // use a case insensitive search
+		const entries = FS.readdirSync(dir);
+		const found = entries.filter((e) => e.toLowerCase() === name); // use a case insensitive search
 		if (found.length === 1) {
 			// on a case sensitive filesystem we cannot determine here, whether the file exists or not, hence we need the 'file exists' precondition
-			let prefix = realPath(dir); // recurse
+			const prefix = realPath(dir); // recurse
 			if (prefix) {
 				return Path.join(prefix, found[0]);
 			}
@@ -104,7 +104,7 @@ export function realPath(path: string): string | null {
 			const ix = found.indexOf(name);
 			if (ix >= 0) {
 				// case sensitive
-				let prefix = realPath(dir); // recurse
+				const prefix = realPath(dir); // recurse
 				if (prefix) {
 					return Path.join(prefix, found[ix]);
 				}
@@ -178,7 +178,7 @@ export function findOnPath(program: string, args_env: any): string | undefined {
  */
 export function findExecutable(
 	program: string,
-	args_env: any
+	args_env: any,
 ): string | undefined {
 	const env = extendObject(extendObject({}, process.env), args_env);
 
@@ -304,7 +304,7 @@ export function multiGlob(patterns: string[], opts?): Promise<string[]> {
 			symlinks: Object.create(null),
 			ignore: [],
 		},
-		opts
+		opts,
 	);
 
 	const isExclude = (pattern) => pattern[0] === "!";
@@ -342,15 +342,15 @@ export function multiGlob(patterns: string[], opts?): Promise<string[]> {
 					}
 				});
 			});
-		})
+		}),
 	).then((results) => {
 		const set = new Set<string>();
-		for (let paths of results) {
-			for (let p of paths) {
+		for (const paths of results) {
+			for (const p of paths) {
 				set.add(p);
 			}
 		}
-		let array = new Array<string>();
+		const array = new Array<string>();
 		set.forEach((v) => array.push(Path.posix.normalize(v)));
 		return array;
 	});
@@ -375,10 +375,10 @@ export function multiGlobMatches(patterns: string[], path: string): boolean {
  */
 export function extendObject<T extends object>(
 	toObject: T,
-	fromObject: T | undefined
+	fromObject: T | undefined,
 ): T {
 	if (fromObject) {
-		for (let key in fromObject) {
+		for (const key in fromObject) {
 			if (fromObject.hasOwnProperty(key)) {
 				toObject[key] = fromObject[key];
 			}

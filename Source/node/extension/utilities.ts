@@ -2,10 +2,8 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-"use strict";
-
-import * as vscode from "vscode";
 import * as FS from "fs";
+import * as vscode from "vscode";
 
 export class Logger {
 	debug(message: string) {
@@ -25,7 +23,7 @@ export function writeToConsole(message: string) {
  * Copy attributes from fromObject to toObject.
  */
 export function extendObject<T extends object>(toObject: T, fromObject: T): T {
-	for (let key in fromObject) {
+	for (const key in fromObject) {
 		if (fromObject.hasOwnProperty(key)) {
 			toObject[key] = fromObject[key];
 		}

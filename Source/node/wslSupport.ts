@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as path from "path";
-import * as fs from "fs";
 import * as child_process from "child_process";
+import * as fs from "fs";
+import * as path from "path";
 
 const isWindows = process.platform === "win32";
 const is64bit = process.arch === "x64";
@@ -22,7 +22,7 @@ export function subsystemLinuxPresent(): boolean {
 }
 
 function windowsPathToWSLPath(
-	windowsPath: string | undefined
+	windowsPath: string | undefined,
 ): string | undefined {
 	if (!isWindows || !windowsPath) {
 		return undefined;
@@ -50,7 +50,7 @@ export function createLaunchArg(
 	cwd: string | undefined,
 	executable: string,
 	args?: string[],
-	program?: string
+	program?: string,
 ): ILaunchArgs {
 	if (useSubsytemLinux && subsystemLinuxPresent()) {
 		const sysRoot = process.env["SystemRoot"] || "C:\\WINDOWS";
@@ -61,7 +61,7 @@ export function createLaunchArg(
 			? bashPath64bitApp
 			: bashPathHost;
 
-		let bashCommand = [executable]
+		const bashCommand = [executable]
 			.concat(args || [])
 			.map((element) => {
 				if (element === program) {
@@ -94,18 +94,18 @@ export function spawnSync(
 	useWSL: boolean,
 	executable: string,
 	args?: string[],
-	options?: child_process.SpawnSyncOptions
+	options?: child_process.SpawnSyncOptions,
 ) {
 	const launchArgs = createLaunchArg(
 		useWSL,
 		false,
 		undefined,
 		executable,
-		args
+		args,
 	);
 	return child_process.spawnSync(
 		launchArgs.executable,
 		launchArgs.args,
-		useWSL ? undefined : options
+		useWSL ? undefined : options,
 	);
 }

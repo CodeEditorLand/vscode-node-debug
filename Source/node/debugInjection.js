@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-!(function () {
+!(() => {
 	var CHUNK_SIZE = 100; // break large objects into chunks of this size
 	var INDEX_PATTERN = /^(0|[1-9][0-9]*)$/;
 
@@ -29,25 +29,18 @@
 		if (!PropertyKind) {
 			throw new Error("undef");
 		}
-		indexedPropertyCount = function (mirror) {
-			return mirror.propertyNames(PropertyKind.Indexed).length;
-		};
-		namedPropertyCount = function (mirror) {
-			return mirror.propertyNames(PropertyKind.Named).length;
-		};
-		hasManyProperties = function (mirror, limit) {
-			return (
-				mirror.propertyNames(
-					PropertyKind.Named | PropertyKind.Indexed,
-					limit
-				).length >= limit
-			);
-		};
-		namedProperties = function (mirror) {
-			return mirror.propertyNames(PropertyKind.Named);
-		};
+		indexedPropertyCount = (mirror) =>
+			mirror.propertyNames(PropertyKind.Indexed).length;
+		namedPropertyCount = (mirror) =>
+			mirror.propertyNames(PropertyKind.Named).length;
+		hasManyProperties = (mirror, limit) =>
+			mirror.propertyNames(
+				PropertyKind.Named | PropertyKind.Indexed,
+				limit,
+			).length >= limit;
+		namedProperties = (mirror) => mirror.propertyNames(PropertyKind.Named);
 	} catch (error) {
-		indexedPropertyCount = function (mirror) {
+		indexedPropertyCount = (mirror) => {
 			var n = 0;
 			var names = mirror.propertyNames();
 			for (var i = 0; i < names.length; i++) {
@@ -57,7 +50,7 @@
 			}
 			return n;
 		};
-		namedPropertyCount = function (mirror) {
+		namedPropertyCount = (mirror) => {
 			var n = 0;
 			var names = mirror.propertyNames();
 			for (var i = 0; i < names.length; i++) {
@@ -67,10 +60,9 @@
 			}
 			return n;
 		};
-		hasManyProperties = function (mirror, limit) {
-			return mirror.propertyNames().length >= limit;
-		};
-		namedProperties = function (mirror) {
+		hasManyProperties = (mirror, limit) =>
+			mirror.propertyNames().length >= limit;
+		namedProperties = (mirror) => {
 			var named = [];
 			var names = mirror.propertyNames();
 			for (var i = 0; i < names.length; i++) {
@@ -83,7 +75,7 @@
 		};
 	}
 
-	var isIndex = function (name) {
+	var isIndex = (name) => {
 		switch (typeof name) {
 			case "number":
 				return true;
@@ -100,7 +92,7 @@
 	 */
 	try {
 		var JSONProtocolSerializer = vm.runInDebugContext(
-			"JSONProtocolSerializer"
+			"JSONProtocolSerializer",
 		);
 
 		JSONProtocolSerializer.prototype.serializeReferencedObjects =
@@ -114,10 +106,8 @@
 					if (m.isObject()) {
 						if (m.handle() < 0) {
 							// we cannot drop transient objects from 'refs' because they cannot be looked up later
-						} else {
-							if (hasManyProperties(m, CHUNK_SIZE)) {
-								continue;
-							}
+						} else if (hasManyProperties(m, CHUNK_SIZE)) {
+							continue;
 						}
 					}
 
@@ -134,10 +124,10 @@
 	 * 'mode' controls whether 'named' or 'indexed' or 'all' types of properties are returned.
 	 * For 'indexed' or 'all' mode 'start' and 'count' specify the range of properties to return.
 	 */
-	DebugCommandProcessor.prototype.dispatch_["vscode_slice"] = function (
+	DebugCommandProcessor.prototype.dispatch_["vscode_slice"] = (
 		request,
-		response
-	) {
+		response,
+	) => {
 		var handle = request.arguments.handle;
 		var start = request.arguments.start;
 		var count = request.arguments.count;
@@ -161,7 +151,7 @@
 			if (mirror.isArray()) {
 				var a = mirror.indexedPropertiesFromRange(
 					start,
-					start + count - 1
+					start + count - 1,
 				);
 				for (var i = 0; i < a.length; i++) {
 					result.push({
@@ -185,7 +175,7 @@
 	 * If the passed mirror object is a large array or object this function
 	 * returns the mirror without its properties but with two size attributes ('vscode_namedCnt', 'vscode_indexedCnt') instead.
 	 */
-	var dehydrate = function (mirror) {
+	var dehydrate = (mirror) => {
 		var namedCnt = -1;
 		var indexedCnt = -1;
 
@@ -230,7 +220,7 @@
 	 */
 	DebugCommandProcessor.prototype.dispatch_["vscode_lookup"] = function (
 		request,
-		response
+		response,
 	) {
 		var result = this.lookupRequest_(request, response);
 		if (!result && response.body) {
@@ -249,7 +239,7 @@
 	 */
 	DebugCommandProcessor.prototype.dispatch_["vscode_evaluate"] = function (
 		request,
-		response
+		response,
 	) {
 		var result = this.evaluateRequest_(request, response);
 		if (!result) {
@@ -263,7 +253,7 @@
 	 */
 	DebugCommandProcessor.prototype.dispatch_["vscode_scopes"] = function (
 		request,
-		response
+		response,
 	) {
 		var result = this.scopesRequest_(request, response);
 		if (!result) {

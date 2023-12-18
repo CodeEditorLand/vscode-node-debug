@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-"use strict";
-
 import * as vscode from "vscode";
 import * as nls from "vscode-nls";
 import { attachToProcess, getPidFromSession } from "./autoAttach";
@@ -24,7 +22,7 @@ export class Cluster {
 
 	public static prepareAutoAttachChildProcesses(
 		folder: vscode.WorkspaceFolder | undefined,
-		config: vscode.DebugConfiguration
+		config: vscode.DebugConfiguration,
 	) {
 		this.clusters.set(config.name, new Cluster(folder, config));
 	}
@@ -46,7 +44,7 @@ export class Cluster {
 
 	private constructor(
 		private _folder: vscode.WorkspaceFolder | undefined,
-		private _config: vscode.DebugConfiguration
+		private _config: vscode.DebugConfiguration,
 	) {
 		this._subProcesses = new Set<number>();
 		this._childCounter = 1;
@@ -63,7 +61,7 @@ export class Cluster {
 					const name = localize(
 						"child.process.with.pid.label",
 						"Child process {0}",
-						this._childCounter++
+						this._childCounter++,
 					);
 					attachToProcess(
 						this._folder,
@@ -71,7 +69,7 @@ export class Cluster {
 						pid,
 						args,
 						this._config,
-						session
+						session,
 					);
 				}
 			});
@@ -92,7 +90,7 @@ export class Cluster {
 function pollProcesses(
 	rootPid: number,
 	inTerminal: boolean,
-	cb: (pid: number, cmd: string, args: string) => void
+	cb: (pid: number, cmd: string, args: string) => void,
 ): vscode.Disposable {
 	let stopped = false;
 
@@ -115,11 +113,11 @@ function pollProcesses(
 
 function findChildProcesses(
 	rootPid: number,
-	cb: (pid: number, cmd: string, args: string) => void
+	cb: (pid: number, cmd: string, args: string) => void,
 ): Promise<void> {
 	function walker(node: ProcessTreeNode) {
 		if (node.pid !== rootPid) {
-			let { protocol } = analyseArguments(node.args);
+			const { protocol } = analyseArguments(node.args);
 			if (protocol) {
 				cb(node.pid, node.command, node.args);
 			}

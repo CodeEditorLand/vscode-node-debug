@@ -3,13 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-"use strict";
-
+import { basename } from "path";
 import * as vscode from "vscode";
 import * as nls from "vscode-nls";
-import { basename } from "path";
-import { analyseArguments } from "./protocolDetection";
 import { ProcessTreeNode, getProcessTree } from "./processTree";
+import { analyseArguments } from "./protocolDetection";
 
 const localize = nls.loadMessageBundle();
 
@@ -19,7 +17,7 @@ const pids: Promise<number>[] = [];
 let autoAttacher: vscode.Disposable | undefined;
 
 export function getPidFromSession(
-	session: vscode.DebugSession
+	session: vscode.DebugSession,
 ): Promise<number> {
 	return new Promise<number>((resolve, e) => {
 		setTimeout(
@@ -43,14 +41,14 @@ export function getPidFromSession(
 							(e) => {
 								clearTimeout(timer);
 								resolve(NaN);
-							}
+							},
 						);
 				} else {
 					clearTimeout(timer);
 					resolve(NaN);
 				}
 			},
-			session.type === "legacy-node2" ? 500 : 100
+			session.type === "legacy-node2" ? 500 : 100,
 		);
 	});
 }
@@ -65,7 +63,7 @@ export function initializeAutoAttach(context: vscode.ExtensionContext) {
 				// try to get pid from newly started node.js debug session
 				pids.push(getPidFromSession(session));
 			}
-		})
+		}),
 	);
 
 	context.subscriptions.push(
@@ -82,15 +80,15 @@ export function initializeAutoAttach(context: vscode.ExtensionContext) {
 								const name = localize(
 									"process.with.pid.label",
 									"Auto attached ({0})",
-									pid
+									pid,
 								);
 								attachToProcess(undefined, name, pid, args);
 							}
-						}
+						},
 					);
 				}
-			}
-		)
+			},
+		),
 	);
 
 	context.subscriptions.push(
@@ -101,8 +99,8 @@ export function initializeAutoAttach(context: vscode.ExtensionContext) {
 					autoAttacher.dispose();
 					autoAttacher = undefined;
 				}
-			}
-		)
+			},
+		),
 	);
 }
 
@@ -118,7 +116,7 @@ export function attachToProcess(
 	pid: number,
 	args: string,
 	baseConfig?: vscode.DebugConfiguration,
-	parentSession?: vscode.DebugSession
+	parentSession?: vscode.DebugSession,
 ) {
 	alreadyAttached(pid).then((isAttached) => {
 		if (isAttached) {
@@ -169,15 +167,13 @@ export function attachToProcess(
 				}
 			}
 
-			let { usePort, protocol, port } = analyseArguments(args);
+			const { usePort, protocol, port } = analyseArguments(args);
 			if (usePort) {
 				config.processId = `${protocol}${port}`;
+			} else if (protocol && port > 0) {
+				config.processId = `${pid}${protocol}${port}`;
 			} else {
-				if (protocol && port > 0) {
-					config.processId = `${pid}${protocol}${port}`;
-				} else {
-					config.processId = pid.toString();
-				}
+				config.processId = pid.toString();
 			}
 
 			vscode.debug.startDebugging(folder, config, parentSession);
@@ -191,7 +187,7 @@ export function attachToProcess(
 function pollProcesses(
 	rootPid: number,
 	inTerminal: boolean,
-	cb: (pid: number, cmd: string, args: string) => void
+	cb: (pid: number, cmd: string, args: string) => void,
 ): vscode.Disposable {
 	let stopped = false;
 
@@ -215,18 +211,18 @@ function pollProcesses(
 function findChildProcesses(
 	rootPid: number,
 	inTerminal: boolean,
-	cb: (pid: number, cmd: string, args: string) => void
+	cb: (pid: number, cmd: string, args: string) => void,
 ): Promise<void> {
 	function walker(
 		node: ProcessTreeNode,
 		terminal: boolean,
-		terminalPids: (number | undefined)[]
+		terminalPids: (number | undefined)[],
 	) {
 		if (terminalPids.indexOf(node.pid) >= 0) {
 			terminal = true; // found the terminal shell
 		}
 
-		let { protocol } = analyseArguments(node.args);
+		const { protocol } = analyseArguments(node.args);
 		if (terminal && protocol) {
 			cb(node.pid, node.command, node.args);
 		}
@@ -241,7 +237,7 @@ function findChildProcesses(
 			const terminals = vscode.window.terminals;
 			if (terminals.length > 0) {
 				Promise.all(
-					terminals.map((terminal) => terminal.processId)
+					terminals.map((terminal) => terminal.processId),
 				).then((terminalPids) => {
 					walker(tree, !inTerminal, terminalPids);
 				});

@@ -5,8 +5,6 @@
 
 //@ts-check
 
-"use strict";
-
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 

@@ -2,17 +2,15 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-"use strict";
-
-import * as nls from "vscode-nls";
-import * as vscode from "vscode";
-import { basename } from "path";
-import { getProcesses } from "./processTree";
 import { execSync } from "child_process";
+import { basename } from "path";
+import * as vscode from "vscode";
+import * as nls from "vscode-nls";
+import { getProcesses } from "./processTree";
 import {
-	detectProtocolForPid,
 	INSPECTOR_PORT_DEFAULT,
 	LEGACY_PORT_DEFAULT,
+	detectProtocolForPid,
 } from "./protocolDetection";
 import { analyseArguments } from "./protocolDetection";
 
@@ -49,13 +47,13 @@ export async function attachProcess() {
  * Process the special protocol/processId/port patterns that the process picker puts in the "processId" attribute.
  */
 export async function resolveProcessId(
-	config: vscode.DebugConfiguration
+	config: vscode.DebugConfiguration,
 ): Promise<void> {
-	let processId = config.processId.trim();
+	const processId = config.processId.trim();
 
 	const matches =
 		/^(inspector|legacy)?([0-9]+)(inspector|legacy)?([0-9]+)?$/.exec(
-			processId
+			processId,
 		);
 	if (matches && matches.length === 5) {
 		if (matches[2] && matches[3] && matches[4]) {
@@ -82,7 +80,7 @@ export async function resolveProcessId(
 
 				const debugType = await determineDebugTypeForPidInDebugMode(
 					config,
-					pid
+					pid,
 				);
 				if (debugType) {
 					// processID is handled, so turn this config into a normal port attach configuration
@@ -98,8 +96,8 @@ export async function resolveProcessId(
 						localize(
 							"pid.error",
 							"Attach to process: cannot put process '{0}' in debug mode.",
-							processId
-						)
+							processId,
+						),
 					);
 				}
 			}
@@ -109,8 +107,8 @@ export async function resolveProcessId(
 			localize(
 				"process.id.error",
 				"Attach to process: '{0}' doesn't look like a process id.",
-				processId
-			)
+				processId,
+			),
 		);
 	}
 }
@@ -126,10 +124,10 @@ export async function resolveProcessId(
 export function pickProcess(ports?): Promise<string | null> {
 	return listProcesses(ports)
 		.then((items) => {
-			let options: vscode.QuickPickOptions = {
+			const options: vscode.QuickPickOptions = {
 				placeHolder: localize(
 					"pickNodeProcess",
-					"Pick the node.js process to attach to"
+					"Pick the node.js process to attach to",
 				),
 				matchOnDescription: true,
 				matchOnDetail: true,
@@ -144,9 +142,9 @@ export function pickProcess(ports?): Promise<string | null> {
 					localize(
 						"process.picker.error",
 						"Process picker failed ({0})",
-						err.message
+						err.message,
 					),
-					{ modal: true }
+					{ modal: true },
 				)
 				.then((_) => null);
 		});
@@ -157,7 +155,7 @@ export function pickProcess(ports?): Promise<string | null> {
 function listProcesses(ports: boolean): Promise<ProcessItem[]> {
 	const items: ProcessItem[] = [];
 
-	const NODE = new RegExp("^(?:node|iojs)$", "i");
+	const NODE = /^(?:node|iojs)$/i;
 
 	let seq = 0; // default sort key
 
@@ -167,7 +165,7 @@ function listProcesses(ports: boolean): Promise<ProcessItem[]> {
 			ppid: number,
 			command: string,
 			args: string,
-			date: number
+			date: number,
 		) => {
 			if (
 				process.platform === "win32" &&
@@ -199,38 +197,36 @@ function listProcesses(ports: boolean): Promise<ProcessItem[]> {
 						"process.id.port",
 						"process id: {0}, debug port: {1}",
 						pid,
-						port
+						port,
 					);
 				} else {
 					description = localize(
 						"process.id.port.legacy",
 						"process id: {0}, debug port: {1} (legacy protocol)",
 						pid,
-						port
+						port,
 					);
 				}
 				pidOrPort = `${protocol}${port}`;
+			} else if (protocol && port > 0) {
+				description = localize(
+					"process.id.port.signal",
+					"process id: {0}, debug port: {1} ({2})",
+					pid,
+					port,
+					"SIGUSR1",
+				);
+				pidOrPort = `${pid}${protocol}${port}`;
 			} else {
-				if (protocol && port > 0) {
+				// no port given
+				if (NODE.test(executable_name)) {
 					description = localize(
-						"process.id.port.signal",
-						"process id: {0}, debug port: {1} ({2})",
+						"process.id.signal",
+						"process id: {0} ({1})",
 						pid,
-						port,
-						"SIGUSR1"
+						"SIGUSR1",
 					);
-					pidOrPort = `${pid}${protocol}${port}`;
-				} else {
-					// no port given
-					if (NODE.test(executable_name)) {
-						description = localize(
-							"process.id.signal",
-							"process id: {0} ({1})",
-							pid,
-							"SIGUSR1"
-						);
-						pidOrPort = pid.toString();
-					}
+					pidOrPort = pid.toString();
 				}
 			}
 
@@ -247,7 +243,7 @@ function listProcesses(ports: boolean): Promise<ProcessItem[]> {
 					sortKey: date ? date : seq++,
 				});
 			}
-		}
+		},
 	).then(() => items.sort((a, b) => b.sortKey - a.sortKey)); // sort items by process id, newest first
 }
 
@@ -269,15 +265,15 @@ function putPidInDebugMode(pid: number): void {
 				"cannot.enable.debug.mode.error",
 				"Attach to process: cannot enable debug mode for process '{0}' ({1}).",
 				pid,
-				e
-			)
+				e,
+			),
 		);
 	}
 }
 
 function determineDebugTypeForPidInDebugMode(
 	config: any,
-	pid: number
+	pid: number,
 ): Promise<string | null> {
 	let debugProtocolP: Promise<string | null>;
 	if (config.port === INSPECTOR_PORT_DEFAULT) {
@@ -294,7 +290,7 @@ function determineDebugTypeForPidInDebugMode(
 		return debugProtocol === "inspector"
 			? "legacy-node2"
 			: debugProtocol === "legacy"
-				? "legacy-node"
-				: null;
+			  ? "legacy-node"
+			  : null;
 	});
 }

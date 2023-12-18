@@ -4,60 +4,60 @@
  *--------------------------------------------------------------------------------------------*/
 
 import {
-	LoggingDebugSession,
+	Breakpoint,
+	CapabilitiesEvent,
 	DebugSession,
+	ErrorDestination,
+	Handles,
+	InitializedEvent,
+	LoadedSourceEvent,
 	Logger,
-	logger,
-	Thread,
+	LoggingDebugSession,
+	OutputEvent,
+	Scope,
 	Source,
 	StackFrame,
-	Scope,
-	Variable,
-	Breakpoint,
-	TerminatedEvent,
-	InitializedEvent,
 	StoppedEvent,
-	OutputEvent,
-	LoadedSourceEvent,
-	Handles,
-	ErrorDestination,
-	CapabilitiesEvent,
+	TerminatedEvent,
+	Thread,
+	Variable,
+	logger,
 } from "vscode-debugadapter";
 import { DebugProtocol } from "vscode-debugprotocol";
 
+import * as CP from "child_process";
+import * as FS from "fs";
+import * as Net from "net";
+import * as Path from "path";
+import * as URL from "url";
+import * as nls from "vscode-nls";
 import {
-	NodeV8Protocol,
 	NodeV8Event,
+	NodeV8Protocol,
 	NodeV8Response,
+	V8BacktraceArgs,
+	V8BreakEventBody,
+	V8EvaluateResponse,
+	V8EventBody,
+	V8ExceptionEventBody,
+	V8Frame,
+	V8FrameResponse,
+	V8Function,
+	V8Handle,
+	V8Object,
+	V8Property,
+	V8Ref,
+	V8RestartFrameArgs,
+	V8Scope,
+	V8ScopeResponse,
+	V8Script,
 	V8SetBreakpointArgs,
 	V8SetVariableValueArgs,
-	V8RestartFrameArgs,
-	V8BacktraceArgs,
-	V8ScopeResponse,
-	V8EvaluateResponse,
-	V8FrameResponse,
-	V8EventBody,
-	V8BreakEventBody,
-	V8ExceptionEventBody,
-	V8Ref,
-	V8Handle,
-	V8Property,
-	V8Object,
 	V8Simple,
-	V8Function,
-	V8Frame,
-	V8Scope,
-	V8Script,
 } from "./nodeV8Protocol";
-import { ISourceMaps, SourceMaps, SourceMap } from "./sourceMaps";
 import * as PathUtils from "./pathUtilities";
+import { ISourceMaps, SourceMap, SourceMaps } from "./sourceMaps";
 import * as WSL from "./wslSupport";
-import * as CP from "child_process";
-import * as Net from "net";
-import * as URL from "url";
-import * as Path from "path";
-import * as FS from "fs";
-import * as nls from "vscode-nls";
 
 let localize = nls.loadMessageBundle();
 
@@ -72,12 +72,12 @@ export interface VariableContainer {
 		session: NodeDebugSession,
 		filter: FilterType,
 		start: number | undefined,
-		count: number | undefined
+		count: number | undefined,
 	): Promise<Variable[]>;
 	SetValue(
 		session: NodeDebugSession,
 		name: string,
-		value: string
+		value: string,
 	): Promise<Variable>;
 }
 
@@ -86,7 +86,7 @@ type ExpanderFunction = (start: number, count: number) => Promise<Variable[]>;
 export class Expander implements VariableContainer {
 	public static SET_VALUE_ERROR = localize(
 		"setVariable.error",
-		"Setting value not supported"
+		"Setting value not supported",
 	);
 
 	private _expanderFunction: ExpanderFunction;
@@ -99,7 +99,7 @@ export class Expander implements VariableContainer {
 		session: NodeDebugSession,
 		filter: string,
 		start: number,
-		count: number
+		count: number,
 	): Promise<Variable[]> {
 		return this._expanderFunction(start, count);
 	}
@@ -107,7 +107,7 @@ export class Expander implements VariableContainer {
 	public SetValue(
 		session: NodeDebugSession,
 		name: string,
-		value: string
+		value: string,
 	): Promise<Variable> {
 		return Promise.reject(new Error(Expander.SET_VALUE_ERROR));
 	}
@@ -121,7 +121,7 @@ export class PropertyContainer implements VariableContainer {
 	public constructor(
 		evalName: string | undefined,
 		obj: V8Object,
-		ths?: V8Object
+		ths?: V8Object,
 	) {
 		this._evalName = evalName;
 		this._object = obj;
@@ -132,7 +132,7 @@ export class PropertyContainer implements VariableContainer {
 		session: NodeDebugSession,
 		filter: FilterType,
 		start: number,
-		count: number
+		count: number,
 	): Promise<Variable[]> {
 		if (filter === "named") {
 			return session
@@ -159,7 +159,7 @@ export class PropertyContainer implements VariableContainer {
 				this._object,
 				"indexed",
 				start,
-				count
+				count,
 			);
 		} else {
 			return session
@@ -184,7 +184,7 @@ export class PropertyContainer implements VariableContainer {
 	public SetValue(
 		session: NodeDebugSession,
 		name: string,
-		value: string
+		value: string,
 	): Promise<Variable> {
 		return session._setPropertyValue(this._object.handle, name, value);
 	}
@@ -203,12 +203,12 @@ export class SetMapContainer implements VariableContainer {
 		session: NodeDebugSession,
 		filter: FilterType,
 		start: number,
-		count: number
+		count: number,
 	): Promise<Variable[]> {
 		if (filter === "named") {
 			return session._createSetMapProperties(
 				this._evalName,
-				this._object
+				this._object,
 			);
 		}
 
@@ -222,7 +222,7 @@ export class SetMapContainer implements VariableContainer {
 	public SetValue(
 		session: NodeDebugSession,
 		name: string,
-		value: string
+		value: string,
 	): Promise<Variable> {
 		return Promise.reject(new Error(Expander.SET_VALUE_ERROR));
 	}
@@ -245,7 +245,7 @@ export class ScopeContainer implements VariableContainer {
 		session: NodeDebugSession,
 		filter: FilterType,
 		start: number,
-		count: number
+		count: number,
 	): Promise<Variable[]> {
 		return session
 			._createProperties("", this._object, filter)
@@ -268,7 +268,7 @@ export class ScopeContainer implements VariableContainer {
 	public SetValue(
 		session: NodeDebugSession,
 		name: string,
-		value: string
+		value: string,
 	): Promise<Variable> {
 		return session._setVariableValue(this._frame, this._scope, name, value);
 	}
@@ -306,10 +306,10 @@ class InternalSourceBreakpoint {
 
 	constructor(
 		line: number,
-		column: number = 0,
+		column = 0,
 		condition?: string,
 		logMessage?: string,
-		hitter?: HitterFunction
+		hitter?: HitterFunction,
 	) {
 		this.line = this.orgLine = line;
 		this.column = this.orgColumn = column;
@@ -458,7 +458,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private static NODE_INTERNALS_VM = /^<node_internals>[/\\]VM([0-9]+)/;
 	private static JS_EXTENSIONS = [".js", ".es6", ".jsx", ".mjs"];
 
-	private static NODE_SHEBANG_MATCHER = new RegExp("#! */usr/bin/env +node");
+	private static NODE_SHEBANG_MATCHER = /#! */usr/bin/env +node/;
 	private static LONG_STRING_MATCHER = /\.\.\. \(length: [0-9]+\)$/;
 	private static HITCOUNT_MATCHER = /(>|>=|=|==|<|<=|%)?\s*([0-9]+)/;
 	private static PROPERTY_NAME_MATCHER = /^[$_\w][$_\w0-9]*$/;
@@ -480,8 +480,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 	// session state
 	private _node: NodeV8Protocol;
 	private _attachSuccessful: boolean;
-	private _processId: number = -1; // pid of the program launched
-	private _nodeProcessId: number = -1; // pid of the node runtime
+	private _processId = -1; // pid of the program launched
+	private _nodeProcessId = -1; // pid of the node runtime
 	private _isWSL = false;
 	private _functionBreakpoints = new Array<number>(); // node function breakpoint ids
 	private _scripts = new Map<number, Promise<Script>>(); // script cache
@@ -541,13 +541,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 			// if request successful, cache alls refs
 			if (response.success && response.refs) {
 				const oldSize = this._refCache.size;
-				for (let r of response.refs) {
+				for (const r of response.refs) {
 					this._cache(r.handle, r);
 				}
 				if (this._refCache.size !== oldSize) {
 					this.log(
 						"rc",
-						`NodeV8Protocol hook: ref cache size: ${this._refCache.size}`
+						`NodeV8Protocol hook: ref cache size: ${this._refCache.size}`,
 					);
 				}
 			}
@@ -608,8 +608,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 			eventBody.sourceLineText &&
 			typeof eventBody.sourceColumn === "number"
 		) {
-			let source = eventBody.sourceLineText.substr(
-				eventBody.sourceColumn
+			const source = eventBody.sourceLineText.substr(
+				eventBody.sourceColumn,
 			);
 			if (source.indexOf("reject(") === 0) {
 				if (this._skipRejects && !this._catchRejects) {
@@ -618,18 +618,18 @@ export class NodeDebugSession extends LoggingDebugSession {
 				}
 				description = localize(
 					"exception.paused.promise.rejection",
-					"Paused on Promise Rejection"
+					"Paused on Promise Rejection",
 				);
 				if (eventBody.exception.text) {
 					eventBody.exception.text = localize(
 						"exception.promise.rejection.text",
 						"Promise Rejection ({0})",
-						eventBody.exception.text
+						eventBody.exception.text,
 					);
 				} else {
 					eventBody.exception.text = localize(
 						"exception.promise.rejection",
-						"Promise Rejection"
+						"Promise Rejection",
 					);
 				}
 			}
@@ -640,7 +640,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		this._sendStoppedEvent(
 			"exception",
 			description,
-			eventBody.exception.text
+			eventBody.exception.text,
 		);
 	}
 
@@ -660,13 +660,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				this.log(
 					"la",
-					"_handleNodeBreakEvent: suppressed stop-on-entry event"
+					"_handleNodeBreakEvent: suppressed stop-on-entry event",
 				);
 				// do not send event now
 				this._rememberEntryLocation(
 					eventBody.script.name,
 					eventBody.sourceLine,
-					eventBody.sourceColumn
+					eventBody.sourceColumn,
 				);
 				return;
 			}
@@ -680,8 +680,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 			eventBody.sourceLineText &&
 			typeof eventBody.sourceColumn === "number"
 		) {
-			let source = eventBody.sourceLineText.substr(
-				eventBody.sourceColumn
+			const source = eventBody.sourceLineText.substr(
+				eventBody.sourceColumn,
 			);
 			if (source.indexOf("debugger") === 0) {
 				this._gotDebuggerEvent = true;
@@ -717,7 +717,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	private _sendBreakpointStoppedEvent(breakpointId: number): void {
 		// evaluate hit counts
-		let ibp = this._hitCounts.get(breakpointId);
+		const ibp = this._hitCounts.get(breakpointId);
 		if (ibp) {
 			ibp.hitCount++;
 			if (ibp.hitter && !ibp.hitter(ibp.hitCount)) {
@@ -732,12 +732,12 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private _sendStoppedEvent(
 		reason: ReasonType,
 		description?: string,
-		exception_text?: string
+		exception_text?: string,
 	): void {
 		if (this._smartStepCount > 0) {
 			this.log(
 				"ss",
-				`_handleNodeBreakEvent: ${this._smartStepCount} steps skipped`
+				`_handleNodeBreakEvent: ${this._smartStepCount} steps skipped`,
 			);
 			this._smartStepCount = 0;
 		}
@@ -745,7 +745,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		const e = new StoppedEvent(
 			reason,
 			NodeDebugSession.DUMMY_THREAD_ID,
-			exception_text
+			exception_text,
 		);
 
 		if (!description) {
@@ -753,43 +753,43 @@ export class NodeDebugSession extends LoggingDebugSession {
 				case "step":
 					description = localize(
 						"reason.description.step",
-						"Paused on step"
+						"Paused on step",
 					);
 					break;
 				case "breakpoint":
 					description = localize(
 						"reason.description.breakpoint",
-						"Paused on breakpoint"
+						"Paused on breakpoint",
 					);
 					break;
 				case "exception":
 					description = localize(
 						"reason.description.exception",
-						"Paused on exception"
+						"Paused on exception",
 					);
 					break;
 				case "pause":
 					description = localize(
 						"reason.description.user_request",
-						"Paused on user request"
+						"Paused on user request",
 					);
 					break;
 				case "entry":
 					description = localize(
 						"reason.description.entry",
-						"Paused on entry"
+						"Paused on entry",
 					);
 					break;
 				case "debugger_statement":
 					description = localize(
 						"reason.description.debugger_statement",
-						"Paused on debugger statement"
+						"Paused on debugger statement",
 					);
 					break;
 				case "frame_entry":
 					description = localize(
 						"reason.description.restart",
-						"Paused on frame entry"
+						"Paused on frame entry",
 					);
 					break;
 			}
@@ -810,10 +810,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 */
 	private _skip(event: V8EventBody): boolean {
 		if (this._skipFiles) {
-			let path = this._scriptToPath(event.script);
+			const path = this._scriptToPath(event.script);
 
 			// if launch.json defines localRoot and remoteRoot try to convert remote path back to a local path
-			let localPath = this._remoteToLocal(path);
+			const localPath = this._remoteToLocal(path);
 
 			return PathUtils.multiGlobMatches(this._skipFiles, localPath);
 		}
@@ -825,10 +825,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 * Returns true if a source location of the given event should be skipped.
 	 */
 	private _skipGenerated(event: V8EventBody): Promise<boolean> {
-		let path = this._scriptToPath(event.script);
+		const path = this._scriptToPath(event.script);
 
 		// if launch.json defines localRoot and remoteRoot try to convert remote path back to a local path
-		let localPath = this._remoteToLocal(path);
+		const localPath = this._remoteToLocal(path);
 
 		if (this._skipFiles) {
 			if (PathUtils.multiGlobMatches(this._skipFiles, localPath)) {
@@ -839,8 +839,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		if (this._smartStep) {
 			// try to map
-			let line = event.sourceLine;
-			let column = this._adjustColumn(line, event.sourceColumn);
+			const line = event.sourceLine;
+			const column = this._adjustColumn(line, event.sourceColumn);
 
 			return this._sourceMaps
 				.CannotMapLine(localPath, null, line, column)
@@ -854,7 +854,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	private toggleSkippingResource(
 		response: DebugProtocol.Response,
-		resource: string
+		resource: string,
 	) {
 		resource = decodeURI(<string>URL.parse(resource).pathname);
 		if (this.isSkipped(resource)) {
@@ -907,13 +907,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 		const src = new Source(
 			Path.basename(path),
 			path,
-			this._getScriptIdHandle(script.id)
+			this._getScriptIdHandle(script.id),
 		);
 		if (this._sourceMaps) {
 			return this._sourceMaps.AllSources(path).then((sources) => {
 				if (sources && sources.length > 0) {
 					(<DebugProtocol.Source>src).sources = sources.map(
-						(s) => new Source(Path.basename(s), s)
+						(s) => new Source(Path.basename(s), s),
 					);
 				}
 				return src;
@@ -971,7 +971,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected initializeRequest(
 		response: DebugProtocol.InitializeResponse,
-		args: DebugProtocol.InitializeRequestArguments
+		args: DebugProtocol.InitializeRequestArguments,
 	): void {
 		this.log("la", `initializeRequest: adapterID: ${args.adapterID}`);
 
@@ -1052,7 +1052,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected launchRequest(
 		response: DebugProtocol.LaunchResponse,
-		args: LaunchRequestArguments
+		args: LaunchRequestArguments,
 	): void {
 		if (this._processCommonArgs(response, args)) {
 			return;
@@ -1064,7 +1064,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				args,
 				args.__restart.port,
 				undefined,
-				args.timeout
+				args.timeout,
 			);
 			return;
 		}
@@ -1085,8 +1085,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 						localize(
 							"VSND2028",
 							"Unknown console type '{0}'.",
-							args.console
-						)
+							args.console,
+						),
 					);
 					return;
 			}
@@ -1104,8 +1104,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 					2007,
 					localize(
 						"attribute.wls.not.exist",
-						"Cannot find Windows Subsystem Linux installation"
-					)
+						"Cannot find Windows Subsystem Linux installation",
+					),
 				);
 				return;
 			}
@@ -1116,7 +1116,21 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (args.useWSL) {
 			runtimeExecutable = runtimeExecutable || NodeDebugSession.NODE;
 		} else if (runtimeExecutable) {
-			if (!Path.isAbsolute(runtimeExecutable)) {
+			if (Path.isAbsolute(runtimeExecutable)) {
+				const re = PathUtils.findExecutable(
+					runtimeExecutable,
+					args.env,
+				);
+				if (!re) {
+					this.sendNotExistErrorResponse(
+						response,
+						"runtimeExecutable",
+						runtimeExecutable,
+					);
+					return;
+				}
+				runtimeExecutable = re;
+			} else {
 				const re = PathUtils.findOnPath(runtimeExecutable, args.env);
 				if (!re) {
 					this.sendErrorResponse(
@@ -1125,23 +1139,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 						localize(
 							"VSND2001",
 							"Cannot find runtime '{0}' on PATH. Make sure to have '{0}' installed.",
-							"{_runtime}"
+							"{_runtime}",
 						),
-						{ _runtime: runtimeExecutable }
-					);
-					return;
-				}
-				runtimeExecutable = re;
-			} else {
-				const re = PathUtils.findExecutable(
-					runtimeExecutable,
-					args.env
-				);
-				if (!re) {
-					this.sendNotExistErrorResponse(
-						response,
-						"runtimeExecutable",
-						runtimeExecutable
+						{ _runtime: runtimeExecutable },
 					);
 					return;
 				}
@@ -1156,9 +1156,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 					localize(
 						"VSND2001",
 						"Cannot find runtime '{0}' on PATH. Make sure to have '{0}' installed.",
-						"{_runtime}"
+						"{_runtime}",
 					),
-					{ _runtime: NodeDebugSession.NODE }
+					{ _runtime: NodeDebugSession.NODE },
 				);
 				return;
 			}
@@ -1174,7 +1174,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.sendRelativePathErrorResponse(
 					response,
 					"program",
-					programPath
+					programPath,
 				);
 				return;
 			}
@@ -1183,7 +1183,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					this.sendNotExistErrorResponse(
 						response,
 						"program",
-						programPath
+						programPath,
 					);
 					return;
 				}
@@ -1197,8 +1197,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.outLine(
 					localize(
 						"program.path.case.mismatch.warning",
-						"Program path uses differently cased character as file on disk; this might result in breakpoints not being hit."
-					)
+						"Program path uses differently cased character as file on disk; this might result in breakpoints not being hit.",
+					),
 				);
 			}
 		}
@@ -1224,13 +1224,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 								// programPath must be source because there seems to be a generated file for it
 								this.log(
 									"sm",
-									`launchRequest: program '${programPath}' seems to be the source; launch the generated file '${generatedPath}' instead`
+									`launchRequest: program '${programPath}' seems to be the source; launch the generated file '${generatedPath}' instead`,
 								);
 								programPath = generatedPath;
 							} else {
 								this.log(
 									"sm",
-									`launchRequest: program '${programPath}' seems to be the generated file`
+									`launchRequest: program '${programPath}' seems to be the generated file`,
 								);
 							}
 							this.launchRequest2(
@@ -1239,7 +1239,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 								programPath,
 								programArgs,
 								<string>runtimeExecutable,
-								runtimeArgs
+								runtimeArgs,
 							);
 						});
 					return;
@@ -1253,9 +1253,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 						localize(
 							"VSND2002",
 							"Cannot launch program '{0}'; configuring source maps might help.",
-							"{path}"
+							"{path}",
 						),
-						{ path: programPath }
+						{ path: programPath },
 					);
 					return;
 				}
@@ -1271,9 +1271,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 									localize(
 										"VSND2009",
 										"Cannot launch program '{0}' because corresponding JavaScript cannot be found.",
-										"{path}"
+										"{path}",
 									),
-									{ path: programPath }
+									{ path: programPath },
 								);
 							} else {
 								this.sendErrorResponse(
@@ -1283,16 +1283,16 @@ export class NodeDebugSession extends LoggingDebugSession {
 										"VSND2003",
 										"Cannot launch program '{0}'; setting the '{1}' attribute might help.",
 										"{path}",
-										"outFiles"
+										"outFiles",
 									),
-									{ path: programPath }
+									{ path: programPath },
 								);
 							}
 							return;
 						}
 						this.log(
 							"sm",
-							`launchRequest: program '${programPath}' seems to be the source; launch the generated file '${generatedPath}' instead`
+							`launchRequest: program '${programPath}' seems to be the source; launch the generated file '${generatedPath}' instead`,
 						);
 						programPath = generatedPath;
 						this.launchRequest2(
@@ -1301,7 +1301,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							programPath,
 							programArgs,
 							<string>runtimeExecutable,
-							runtimeArgs
+							runtimeArgs,
 						);
 					});
 				return;
@@ -1314,7 +1314,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			programPath,
 			programArgs,
 			runtimeExecutable,
-			runtimeArgs
+			runtimeArgs,
 		);
 	}
 
@@ -1324,7 +1324,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		programPath: string,
 		programArgs: string[],
 		runtimeExecutable: string,
-		runtimeArgs: string[]
+		runtimeArgs: string[],
 	): Promise<void> {
 		let program: string | undefined;
 		let workingDirectory = args.cwd;
@@ -1334,7 +1334,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.sendRelativePathErrorResponse(
 					response,
 					"cwd",
-					workingDirectory
+					workingDirectory,
 				);
 				return;
 			}
@@ -1342,7 +1342,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.sendNotExistErrorResponse(
 					response,
 					"cwd",
-					workingDirectory
+					workingDirectory,
 				);
 				return;
 			}
@@ -1392,7 +1392,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (args.envFile) {
 			try {
 				const buffer = PathUtils.stripBOM(
-					FS.readFileSync(args.envFile, "utf8")
+					FS.readFileSync(args.envFile, "utf8"),
 				);
 				const env = {};
 				buffer.split("\n").forEach((line) => {
@@ -1421,9 +1421,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 					localize(
 						"VSND2029",
 						"Can't load environment variables from file ({0}).",
-						"{_error}"
+						"{_error}",
 					),
-					{ _error: e.message }
+					{ _error: e.message },
 				);
 				return;
 			}
@@ -1436,7 +1436,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			<string>workingDirectory,
 			launchArgs[0],
 			launchArgs.slice(1),
-			program
+			program,
 		); // workaround for #35249
 
 		// if using subsystem linux, we use local/remote mapping (if not configured by user)
@@ -1484,7 +1484,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 								args,
 								port,
 								address,
-								timeout
+								timeout,
 							);
 						}
 					} else {
@@ -1494,15 +1494,15 @@ export class NodeDebugSession extends LoggingDebugSession {
 							localize(
 								"VSND2011",
 								"Cannot launch debug target in terminal ({0}).",
-								"{_error}"
+								"{_error}",
 							),
-							{ _error: runResponse.message }
+							{ _error: runResponse.message },
 						);
 						this._terminated(
-							"terminal error: " + runResponse.message
+							"terminal error: " + runResponse.message,
 						);
 					}
-				}
+				},
 			);
 		} else {
 			this._sendLaunchCommandToConsole(launchArgs);
@@ -1510,7 +1510,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			// merge environment variables into a copy of the process.env
 			envVars = PathUtils.extendObject(
 				PathUtils.extendObject({}, <ProcessEnvWithNull>process.env),
-				envVars
+				envVars,
 			);
 
 			// delete all variables that have a 'null' value
@@ -1554,7 +1554,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			const nodeProcess = CP.spawn(
 				wslLaunchArgs.executable,
 				wslLaunchArgs.args,
-				options
+				options,
 			);
 			nodeProcess.on("error", (error) => {
 				// tslint:disable-next-line:no-bitwise
@@ -1564,10 +1564,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 					localize(
 						"VSND2017",
 						"Cannot launch debug target ({0}).",
-						"{_error}"
+						"{_error}",
 					),
 					{ _error: error.message },
-					ErrorDestination.Telemetry | ErrorDestination.User
+					ErrorDestination.Telemetry | ErrorDestination.User,
 				);
 				this._terminated(`failed to launch target (${error})`);
 			});
@@ -1593,7 +1593,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private _sendLaunchCommandToConsole(args: string[]) {
 		// print the command to launch the target to the debug console
 		let cli = "";
-		for (let a of args) {
+		for (const a of args) {
 			if (a.indexOf(" ") >= 0) {
 				cli += "'" + a + "'";
 			} else {
@@ -1622,7 +1622,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 */
 	private _processCommonArgs(
 		response: DebugProtocol.Response,
-		args: CommonArguments
+		args: CommonArguments,
 	): boolean {
 		let stopLogging = true;
 		if (typeof args.trace === "boolean") {
@@ -1671,7 +1671,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.sendRelativePathErrorResponse(
 					response,
 					"localRoot",
-					localRoot
+					localRoot,
 				);
 				return true;
 			}
@@ -1679,7 +1679,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.sendNotExistErrorResponse(
 					response,
 					"localRoot",
-					localRoot
+					localRoot,
 				);
 				return true;
 			}
@@ -1698,7 +1698,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						this.sendRelativePathErrorResponse(
 							response,
 							"outDir",
-							generatedCodeDirectory
+							generatedCodeDirectory,
 						);
 						return true;
 					}
@@ -1706,7 +1706,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						this.sendNotExistErrorResponse(
 							response,
 							"outDir",
-							generatedCodeDirectory
+							generatedCodeDirectory,
 						);
 						return true;
 					}
@@ -1714,7 +1714,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this._sourceMaps = new SourceMaps(
 					this,
 					generatedCodeDirectory,
-					args.outFiles
+					args.outFiles,
 				);
 			}
 		}
@@ -1726,7 +1726,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected attachRequest(
 		response: DebugProtocol.AttachResponse,
-		args: AttachRequestArguments
+		args: AttachRequestArguments,
 	): void {
 		if (this._processCommonArgs(response, args)) {
 			return;
@@ -1745,7 +1745,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		args: CommonArguments,
 		port: number,
 		adr: string | undefined,
-		timeout: number | undefined
+		timeout: number | undefined,
 	): void {
 		if (!port) {
 			port = 5858;
@@ -1790,7 +1790,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 									this.sendEvent(
 										new CapabilitiesEvent({
 											supportsStepBack: true,
-										})
+										}),
 									);
 								}
 							}
@@ -1815,9 +1815,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 					localize(
 						"VSND2010",
 						"Cannot connect to runtime process (reason: {0}).",
-						"{_error}"
+						"{_error}",
 					),
-					{ _error: err.message }
+					{ _error: err.message },
 				);
 			} else {
 				// we are not yet connected so retry a few times
@@ -1831,26 +1831,24 @@ export class NodeDebugSession extends LoggingDebugSession {
 							this.log("la", "_attach: retry socket.connect");
 							socket.connect(port, address);
 						}, 200); // retry after 200 ms
+					} else if (typeof args.port === "number") {
+						this.sendErrorResponse(
+							response,
+							2033,
+							localize(
+								"VSND2033",
+								"Cannot connect to runtime; make sure that runtime is in 'legacy' debug mode.",
+							),
+						);
 					} else {
-						if (typeof args.port === "number") {
-							this.sendErrorResponse(
-								response,
-								2033,
-								localize(
-									"VSND2033",
-									"Cannot connect to runtime; make sure that runtime is in 'legacy' debug mode."
-								)
-							);
-						} else {
-							this.sendErrorResponse(
-								response,
-								2034,
-								localize(
-									"VSND2034",
-									"Cannot connect to runtime via 'legacy' protocol; try to use 'inspector' protocol."
-								)
-							);
-						}
+						this.sendErrorResponse(
+							response,
+							2034,
+							localize(
+								"VSND2034",
+								"Cannot connect to runtime via 'legacy' protocol; try to use 'inspector' protocol.",
+							),
+						);
 					}
 				} else {
 					this.sendErrorResponse(
@@ -1859,9 +1857,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 						localize(
 							"VSND2010",
 							"Cannot connect to runtime process (reason: {0}).",
-							"{_error}"
+							"{_error}",
 						),
-						{ _error: err.message }
+						{ _error: err.message },
 					);
 				}
 			}
@@ -1886,7 +1884,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private _isRunningWithRetry(
 		retryCount: number,
 		completeDispatch: (value: boolean) => void,
-		errorDispatch: (error: V8EvaluateResponse) => void
+		errorDispatch: (error: V8EvaluateResponse) => void,
 	): void {
 		this._node.command(
 			"evaluate",
@@ -1896,17 +1894,17 @@ export class NodeDebugSession extends LoggingDebugSession {
 					this._nodeProcessId = +resp.body.value;
 					this.log(
 						"la",
-						`__initialize: got process id ${this._nodeProcessId} from node`
+						`__initialize: got process id ${this._nodeProcessId} from node`,
 					);
 					this.logNodeVersion();
-				} else {
-					if (resp.message.indexOf("process is not defined") >= 0) {
-						this.log(
-							"la",
-							"__initialize: process not defined error; got no pid"
-						);
-						resp.success = true; // continue and try to get process.pid later
-					}
+				} else if (
+					resp.message.indexOf("process is not defined") >= 0
+				) {
+					this.log(
+						"la",
+						"__initialize: process not defined error; got no pid",
+					);
+					resp.success = true; // continue and try to get process.pid later
 				}
 
 				if (resp.success) {
@@ -1914,7 +1912,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				} else {
 					this.log(
 						"la",
-						"__initialize: retrieving process id from node failed"
+						"__initialize: retrieving process id from node failed",
 					);
 
 					if (retryCount < 4) {
@@ -1923,7 +1921,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							this._isRunningWithRetry(
 								retryCount + 1,
 								completeDispatch,
-								errorDispatch
+								errorDispatch,
 							);
 						}, 100);
 						return;
@@ -1931,7 +1929,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						errorDispatch(resp);
 					}
 				}
-			}
+			},
 		);
 	}
 
@@ -1950,14 +1948,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 					this.sendEvent(
 						new OutputEvent("nodeVersion", "telemetry", {
 							version,
-						})
+						}),
 					);
 					this.log(
 						"la",
-						`_initialize: target node version: ${version}`
+						`_initialize: target node version: ${version}`,
 					);
 				}
-			}
+			},
 		);
 	}
 
@@ -1992,7 +1990,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				try {
 					const contents = FS.readFileSync(
 						Path.join(__dirname, NodeDebugSession.DEBUG_INJECTION),
-						"utf8"
+						"utf8",
 					);
 
 					const args = {
@@ -2006,7 +2004,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						.then((resp) => {
 							this.log(
 								"la",
-								`_injectDebuggerExtensions: code injection successful`
+								`_injectDebuggerExtensions: code injection successful`,
 							);
 							this._nodeInjectionAvailable = true;
 							return true;
@@ -2014,7 +2012,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						.catch((resp) => {
 							this.log(
 								"la",
-								`_injectDebuggerExtensions: code injection failed with error '${resp.message}'`
+								`_injectDebuggerExtensions: code injection failed with error '${resp.message}'`,
 							);
 							return true;
 						});
@@ -2032,7 +2030,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 * 2. send 'inititialized' event in order to trigger setBreakpointEvents request from client
 	 * 3. prepare for sending 'break-on-entry' or 'continue' later in configurationDoneRequest()
 	 */
-	private _startInitialize(stopped: boolean, n: number = 0): void {
+	private _startInitialize(stopped: boolean, n = 0): void {
 		if (n === 0) {
 			this.log("la", `_startInitialize: stopped: ${stopped}`);
 		}
@@ -2051,7 +2049,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (this._gotEntryEvent) {
 			this.log(
 				"la",
-				`_startInitialize: got break on entry event after ${n} retries`
+				`_startInitialize: got break on entry event after ${n} retries`,
 			);
 			if (this._nodeProcessId <= 0) {
 				// if we haven't gotten a process pid so far, we try it again
@@ -2063,12 +2061,12 @@ export class NodeDebugSession extends LoggingDebugSession {
 							this._nodeProcessId = +resp.body.value;
 							this.log(
 								"la",
-								`_initialize: got process id ${this._nodeProcessId} from node (2nd try)`
+								`_initialize: got process id ${this._nodeProcessId} from node (2nd try)`,
 							);
 							this.logNodeVersion();
 						}
 						this._startInitialize2(stopped);
-					}
+					},
 				);
 			} else {
 				this._startInitialize2(stopped);
@@ -2076,7 +2074,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		} else {
 			this.log(
 				"la",
-				`_startInitialize: no entry event after ${n} retries; giving up`
+				`_startInitialize: no entry event after ${n} retries; giving up`,
 			);
 
 			this._gotEntryEvent = true; // we pretend to got one so that no 'entry' event will show up later...
@@ -2089,7 +2087,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					this._rememberEntryLocation(
 						s.name,
 						resp.body.line,
-						resp.body.column
+						resp.body.column,
 					);
 				}
 
@@ -2110,7 +2108,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (this._attachMode) {
 			this.log(
 				"la",
-				`_startInitialize2: in attach mode we guess stopOnEntry flag to be '${stopped}''`
+				`_startInitialize2: in attach mode we guess stopOnEntry flag to be '${stopped}''`,
 			);
 			if (this._stopOnEntry === undefined) {
 				this._stopOnEntry = stopped;
@@ -2128,7 +2126,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			} else {
 				this.log(
 					"la",
-					`_startInitialize2: remember to do a 'Continue' later`
+					`_startInitialize2: remember to do a 'Continue' later`,
 				);
 				this._needContinue = true;
 			}
@@ -2139,7 +2137,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected terminateRequest(
 		response: DebugProtocol.TerminateResponse,
-		args: DebugProtocol.TerminateArguments
+		args: DebugProtocol.TerminateArguments,
 	): void {
 		if (!this._isWSL && this._nodeProcessId > 0) {
 			process.kill(this._nodeProcessId, "SIGINT");
@@ -2151,7 +2149,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected disconnectRequest(
 		response: DebugProtocol.DisconnectResponse,
-		args: DebugProtocol.DisconnectArguments
+		args: DebugProtocol.DisconnectArguments,
 	): void {
 		this.shutdown();
 
@@ -2221,23 +2219,23 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected setBreakPointsRequest(
 		response: DebugProtocol.SetBreakpointsResponse,
-		args: DebugProtocol.SetBreakpointsArguments
+		args: DebugProtocol.SetBreakpointsArguments,
 	): void {
 		this.log(
 			"bp",
 			`setBreakPointsRequest: ${JSON.stringify(
-				args.source
-			)} ${JSON.stringify(args.breakpoints)}`
+				args.source,
+			)} ${JSON.stringify(args.breakpoints)}`,
 		);
 
 		const sbs = new Array<InternalSourceBreakpoint>();
 		// prefer the new API: array of breakpoints
 		if (args.breakpoints) {
-			for (let b of args.breakpoints) {
+			for (const b of args.breakpoints) {
 				let hitter: HitterFunction | undefined;
 				if (b.hitCondition) {
 					const result = NodeDebugSession.HITCOUNT_MATCHER.exec(
-						b.hitCondition.trim()
+						b.hitCondition.trim(),
 					);
 					if (result && result.length >= 3) {
 						let op = result[1] || ">=";
@@ -2263,17 +2261,17 @@ export class NodeDebugSession extends LoggingDebugSession {
 							: 0,
 						b.condition,
 						b.logMessage,
-						hitter
-					)
+						hitter,
+					),
 				);
 			}
 		} else if (args.lines) {
 			// deprecated API: convert line number array
-			for (let l of args.lines) {
+			for (const l of args.lines) {
 				sbs.push(
 					new InternalSourceBreakpoint(
-						this.convertClientLineToDebugger(l)
-					)
+						this.convertClientLineToDebugger(l),
+					),
 				);
 			}
 		}
@@ -2290,22 +2288,20 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 			if (this._modifiedSources.has(sourcePath)) {
 				keepUnverified = true;
-			} else {
-				if (
-					typeof args.sourceModified === "boolean" &&
-					args.sourceModified
-				) {
-					keepUnverified = true;
-					this._modifiedSources.add(sourcePath);
-				}
+			} else if (
+				typeof args.sourceModified === "boolean" &&
+				args.sourceModified
+			) {
+				keepUnverified = true;
+				this._modifiedSources.add(sourcePath);
 			}
 
 			if (keepUnverified) {
 				const message = localize(
 					"file.on.disk.changed",
-					"Unverified because file on disk has changed. Please restart debug session."
+					"Unverified because file on disk has changed. Please restart debug session.",
 				);
-				for (let ibp of sbs) {
+				for (const ibp of sbs) {
 					ibp.verificationMessage = message;
 				}
 			}
@@ -2317,7 +2313,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this._mapSourceAndUpdateBreakpoints(
 					response,
 					source.adapterData.inlinePath,
-					sbs
+					sbs,
 				);
 				return;
 			}
@@ -2328,7 +2324,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					response,
 					source.adapterData.remotePath,
 					-1,
-					sbs
+					sbs,
 				);
 				return;
 			}
@@ -2350,12 +2346,12 @@ export class NodeDebugSession extends LoggingDebugSession {
 							localize(
 								"VSND2019",
 								"Internal module {0} not found.",
-								"{_module}"
+								"{_module}",
 							),
-							{ _module: sourcePath }
+							{ _module: sourcePath },
 						);
 					}
-				}
+				},
 			);
 			return;
 		}
@@ -2370,7 +2366,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					response,
 					null,
 					srcSource.scriptId,
-					sbs
+					sbs,
 				);
 				return;
 			}
@@ -2386,16 +2382,16 @@ export class NodeDebugSession extends LoggingDebugSession {
 			2012,
 			"No valid source specified.",
 			null,
-			ErrorDestination.Telemetry
+			ErrorDestination.Telemetry,
 		);
 	}
 
 	private _mapSourceAndUpdateBreakpoints(
 		response: DebugProtocol.SetBreakpointsResponse,
 		path: string,
-		lbs: InternalSourceBreakpoint[]
+		lbs: InternalSourceBreakpoint[],
 	): void {
-		let generated = "";
+		const generated = "";
 
 		Promise.resolve(generated)
 			.then((generated) => {
@@ -2412,7 +2408,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					// if generated and source are the same we don't need a sourcemap
 					this.log(
 						"bp",
-						`_mapSourceAndUpdateBreakpoints: source and generated are same -> ignore sourcemap`
+						`_mapSourceAndUpdateBreakpoints: source and generated are same -> ignore sourcemap`,
 					);
 					generated = "";
 				}
@@ -2424,9 +2420,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 							this._sourceMaps.MapFromSource(
 								path,
 								lbrkpt.line,
-								lbrkpt.column
-							)
-						)
+								lbrkpt.column,
+							),
+						),
 					).then((mapResults) => {
 						for (let i = 0; i < lbs.length; i++) {
 							const lb = lbs[i];
@@ -2434,7 +2430,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							if (mapresult) {
 								this.log(
 									"sm",
-									`_mapSourceAndUpdateBreakpoints: src: '${path}' ${lb.line}:${lb.column} -> gen: '${mapresult.path}' ${mapresult.line}:${mapresult.column}`
+									`_mapSourceAndUpdateBreakpoints: src: '${path}' ${lb.line}:${lb.column} -> gen: '${mapresult.path}' ${mapresult.line}:${mapresult.column}`,
 								);
 								if (mapresult.path !== generated) {
 									// this source line maps to a different destination file -> this is not supported, ignore breakpoint by setting line to -1
@@ -2446,7 +2442,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							} else {
 								this.log(
 									"sm",
-									`_mapSourceAndUpdateBreakpoints: src: '${path}' ${lb.line}:${lb.column} -> gen: couldn't be mapped; breakpoint ignored`
+									`_mapSourceAndUpdateBreakpoints: src: '${path}' ${lb.line}:${lb.column} -> gen: couldn't be mapped; breakpoint ignored`,
 								);
 								lb.line = -1;
 							}
@@ -2463,7 +2459,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				if (!NodeDebugSession.isJavaScript(path)) {
 					// ignore all breakpoints for this source
-					for (let lb of lbs) {
+					for (const lb of lbs) {
 						lb.line = -1;
 					}
 				}
@@ -2483,7 +2479,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		path: string | null,
 		scriptId: number,
 		lbs: InternalSourceBreakpoint[],
-		sourcemap = false
+		sourcemap = false,
 	): void {
 		// clear all existing breakpoints for the given path or script ID
 		this._node
@@ -2494,7 +2490,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				const path_regexp = this._pathToRegexp(path);
 
 				// try to match breakpoints
-				for (let breakpoint of nodeResponse.body.breakpoints) {
+				for (const breakpoint of nodeResponse.body.breakpoints) {
 					switch (breakpoint.type) {
 						case "scriptId":
 							if (scriptId === breakpoint.script_id) {
@@ -2514,8 +2510,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 			.then(() => {
 				return Promise.all(
 					lbs.map((bp) =>
-						this._setBreakpoint(scriptId, path, bp, sourcemap)
-					)
+						this._setBreakpoint(scriptId, path, bp, sourcemap),
+					),
 				);
 			})
 			.then((result) => {
@@ -2525,7 +2521,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.sendResponse(response);
 				this.log(
 					"bp",
-					`_updateBreakpoints: result ${JSON.stringify(result)}`
+					`_updateBreakpoints: result ${JSON.stringify(result)}`,
 				);
 			})
 			.catch((nodeResponse) => {
@@ -2538,7 +2534,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 */
 	private _clearBreakpoints(ids: Array<number>): Promise<void> {
 		return Promise.all(
-			ids.map((id) => this._node.clearBreakpoint({ breakpoint: id }))
+			ids.map((id) => this._node.clearBreakpoint({ breakpoint: id })),
 		)
 			.then((response) => {
 				return;
@@ -2555,14 +2551,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 		scriptId: number,
 		path: string | null,
 		lb: InternalSourceBreakpoint,
-		sourcemap: boolean
+		sourcemap: boolean,
 	): Promise<Breakpoint> {
 		if (lb.line < 0) {
 			// ignore this breakpoint because it couldn't be source mapped successfully
 			const bp: DebugProtocol.Breakpoint = new Breakpoint(false);
 			bp.message = localize(
 				"sourcemapping.fail.message",
-				"Breakpoint ignored because generated code not found (source map problem?)."
+				"Breakpoint ignored because generated code not found (source map problem?).",
 			);
 			return Promise.resolve(bp);
 		}
@@ -2628,13 +2624,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 								localpath,
 								null,
 								actualLine,
-								actualColumn
+								actualColumn,
 							)
 							.then((mapresult) => {
 								if (mapresult) {
 									this.log(
 										"sm",
-										`_setBreakpoint: bp verification gen: '${localpath}' ${actualLine}:${actualColumn} -> src: '${mapresult.path}' ${mapresult.line}:${mapresult.column}`
+										`_setBreakpoint: bp verification gen: '${localpath}' ${actualLine}:${actualColumn} -> src: '${mapresult.path}' ${mapresult.line}:${mapresult.column}`,
 									);
 									actualSrcLine = mapresult.line;
 									actualSrcColumn = mapresult.column;
@@ -2649,7 +2645,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 									actualSrcLine,
 									actualSrcColumn,
 									actualLine,
-									actualColumn
+									actualColumn,
 								);
 							});
 					} else {
@@ -2664,7 +2660,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					actualSrcLine,
 					actualSrcColumn,
 					actualLine,
-					actualColumn
+					actualColumn,
 				);
 			})
 			.catch((error) => {
@@ -2678,7 +2674,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		actualSrcLine: number,
 		actualSrcColumn: number,
 		actualLine: number,
-		actualColumn: number
+		actualColumn: number,
 	): Promise<Breakpoint> {
 		// nasty corner case: since we ignore the break-on-entry event we have to make sure that we
 		// stop in the entry point line if the user has an explicit breakpoint there (or if there is a 'debugger' statement).
@@ -2705,7 +2701,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this._needBreakpointEvent = true;
 				this.log(
 					"la",
-					"_setBreakpoint2: remember to fire a breakpoint event later"
+					"_setBreakpoint2: remember to fire a breakpoint event later",
 				);
 			}
 		}
@@ -2714,7 +2710,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			const bp: DebugProtocol.Breakpoint = new Breakpoint(
 				false,
 				this.convertDebuggerLineToClient(actualSrcLine),
-				this.convertDebuggerColumnToClient(actualSrcColumn)
+				this.convertDebuggerColumnToClient(actualSrcColumn),
 			);
 			bp.message = ibp.verificationMessage;
 			return bp;
@@ -2722,7 +2718,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			return new Breakpoint(
 				true,
 				this.convertDebuggerLineToClient(actualSrcLine),
-				this.convertDebuggerColumnToClient(actualSrcColumn)
+				this.convertDebuggerColumnToClient(actualSrcColumn),
 			);
 		}
 	}
@@ -2786,7 +2782,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected setFunctionBreakPointsRequest(
 		response: DebugProtocol.SetFunctionBreakpointsResponse,
-		args: DebugProtocol.SetFunctionBreakpointsArguments
+		args: DebugProtocol.SetFunctionBreakpointsArguments,
 	): void {
 		// clear all existing function breakpoints
 		this._clearBreakpoints(this._functionBreakpoints)
@@ -2796,8 +2792,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 				// set new function breakpoints
 				return Promise.all(
 					args.breakpoints.map((functionBreakpoint) =>
-						this._setFunctionBreakpoint(functionBreakpoint)
-					)
+						this._setFunctionBreakpoint(functionBreakpoint),
+					),
 				);
 			})
 			.then((results) => {
@@ -2809,8 +2805,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.log(
 					"bp",
 					`setFunctionBreakPointsRequest: result ${JSON.stringify(
-						results
-					)}`
+						results,
+					)}`,
 				);
 			})
 			.catch((nodeResponse) => {
@@ -2823,9 +2819,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 * Returns verification info about the breakpoint.
 	 */
 	private _setFunctionBreakpoint(
-		functionBreakpoint: DebugProtocol.FunctionBreakpoint
+		functionBreakpoint: DebugProtocol.FunctionBreakpoint,
 	): Promise<Breakpoint> {
-		let args: V8SetBreakpointArgs = {
+		const args: V8SetBreakpointArgs = {
 			type: "function",
 			target: functionBreakpoint.name,
 		};
@@ -2840,10 +2836,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 				const locations = resp.body.actual_locations;
 				if (locations && locations.length > 0) {
 					const actualLine = this.convertDebuggerLineToClient(
-						locations[0].line
+						locations[0].line,
 					);
 					const actualColumn = this.convertDebuggerColumnToClient(
-						this._adjustColumn(actualLine, locations[0].column)
+						this._adjustColumn(actualLine, locations[0].column),
 					);
 					return new Breakpoint(true, actualLine, actualColumn); // TODO@AW add source
 				} else {
@@ -2862,11 +2858,11 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected setExceptionBreakPointsRequest(
 		response: DebugProtocol.SetExceptionBreakpointsResponse,
-		args: DebugProtocol.SetExceptionBreakpointsArguments
+		args: DebugProtocol.SetExceptionBreakpointsArguments,
 	): void {
 		this.log(
 			"bp",
-			`setExceptionBreakPointsRequest: ${JSON.stringify(args.filters)}`
+			`setExceptionBreakPointsRequest: ${JSON.stringify(args.filters)}`,
 		);
 
 		let all = false;
@@ -2896,7 +2892,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					2024,
 					"Configuring exception break options failed ({_nodeError}).",
 					{ _nodeError: err.message },
-					ErrorDestination.Telemetry
+					ErrorDestination.Telemetry,
 				);
 			});
 	}
@@ -2905,7 +2901,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected configurationDoneRequest(
 		response: DebugProtocol.ConfigurationDoneResponse,
-		args: DebugProtocol.ConfigurationDoneArguments
+		args: DebugProtocol.ConfigurationDoneArguments,
 	): void {
 		// all breakpoints are configured now -> start debugging
 
@@ -2945,7 +2941,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			if (nodeResponse.success) {
 				const ths = nodeResponse.body.threads;
 				if (ths) {
-					for (let thread of ths) {
+					for (const thread of ths) {
 						const id = thread.id;
 						if (id >= 0) {
 							threads.push(new Thread(id, `Thread (id: ${id})`));
@@ -2964,7 +2960,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					name = `${name} (${this._node.hostVersion})`;
 				}
 				threads.push(
-					new Thread(NodeDebugSession.DUMMY_THREAD_ID, name)
+					new Thread(NodeDebugSession.DUMMY_THREAD_ID, name),
 				);
 			}
 			response.body = {
@@ -2978,7 +2974,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected stackTraceRequest(
 		response: DebugProtocol.StackTraceResponse,
-		args: DebugProtocol.StackTraceArguments
+		args: DebugProtocol.StackTraceArguments,
 	): void {
 		const threadReference = args.threadId;
 		const startFrame =
@@ -2993,7 +2989,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				2014,
 				"Unexpected thread reference {_thread}.",
 				{ _thread: threadReference },
-				ErrorDestination.Telemetry
+				ErrorDestination.Telemetry,
 			);
 			return;
 		}
@@ -3005,7 +3001,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		this.log(
 			"va",
-			`stackTraceRequest: backtrace ${startFrame} ${maxLevels}`
+			`stackTraceRequest: backtrace ${startFrame} ${maxLevels}`,
 		);
 		this._node
 			.backtrace(backtraceArgs)
@@ -3014,7 +3010,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					const frames = response.body.frames;
 					totalFrames = response.body.totalFrames;
 					return Promise.all<StackFrame>(
-						frames.map((frame) => this._createStackFrame(frame))
+						frames.map((frame) => this._createStackFrame(frame)),
 					);
 				} else {
 					throw new Error("no stack");
@@ -3035,14 +3031,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 							2022,
 							localize(
 								"VSND2022",
-								"No call stack because program paused outside of JavaScript."
-							)
+								"No call stack because program paused outside of JavaScript.",
+							),
 						);
 					} else {
 						this.sendErrorResponse(
 							response,
 							2023,
-							localize("VSND2023", "No call stack available.")
+							localize("VSND2023", "No call stack available."),
 						);
 					}
 				} else {
@@ -3051,9 +3047,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 						2018,
 						localize(
 							"VSND2018",
-							"No call stack available ({_command}: {_error})."
+							"No call stack available ({_command}: {_error}).",
 						),
-						{ _command: error.command, _error: error.message }
+						{ _command: error.command, _error: error.message },
 					);
 				}
 			});
@@ -3069,14 +3065,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 			frame.func,
 			frame.receiver,
 		]).then(() => {
-			let line = frame.line;
-			let column = this._adjustColumn(line, frame.column);
+			const line = frame.line;
+			const column = this._adjustColumn(line, frame.column);
 
 			let src: Source | undefined;
 
 			let origin = localize(
 				"origin.from.node",
-				"read-only content from Node.js"
+				"read-only content from Node.js",
 			);
 
 			const script_val = <V8Script>this._getValueFromCache(frame.script);
@@ -3098,15 +3094,15 @@ export class NodeDebugSession extends LoggingDebugSession {
 						// we can only map absolute paths
 						if (PathUtils.isAbsolutePath(name)) {
 							// with remote debugging path might come from a different OS
-							let remotePath = name;
+							const remotePath = name;
 
 							// if launch.json defines localRoot and remoteRoot try to convert remote path back to a local path
-							let localPath = this._remoteToLocal(remotePath);
+							const localPath = this._remoteToLocal(remotePath);
 							if (localPath !== remotePath && this._attachMode) {
 								// assume attached to remote node process
 								origin = localize(
 									"origin.from.remote.node",
-									"read-only content from remote Node.js"
+									"read-only content from remote Node.js",
 								);
 							}
 
@@ -3123,9 +3119,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 											remotePath,
 											origin,
 											line,
-											column
+											column,
 										);
-									}
+									},
 								);
 							}
 
@@ -3136,7 +3132,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 								remotePath,
 								origin,
 								line,
-								column
+								column,
 							);
 						}
 
@@ -3144,7 +3140,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						path = this._scriptToPath(script_val);
 						origin = localize(
 							"origin.core.module",
-							"read-only core module"
+							"read-only core module",
 						);
 					} else {
 						// do not map the script to a file in the workspace
@@ -3170,7 +3166,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					name,
 					path,
 					sourceHandle,
-					origin
+					origin,
 				);
 			}
 
@@ -3182,22 +3178,22 @@ export class NodeDebugSession extends LoggingDebugSession {
 		hasSource: boolean,
 		name: string,
 		path: string | undefined,
-		sourceHandle: number = 0,
+		sourceHandle = 0,
 		origin?: string,
-		data?: any
+		data?: any,
 	): Source {
 		let deemphasize = false;
 		if (path && this.isSkipped(path)) {
 			const skipFiles = localize(
 				"source.skipFiles",
-				"skipped due to 'skipFiles'"
+				"skipped due to 'skipFiles'",
 			);
 			deemphasize = true;
 			origin = origin ? `${origin} (${skipFiles})` : skipFiles;
 		} else if (!hasSource && this._smartStep && this._sourceMaps) {
 			const smartStep = localize(
 				"source.smartstep",
-				"skipped due to 'smartStep'"
+				"skipped due to 'smartStep'",
 			);
 			deemphasize = true;
 			origin = origin ? `${origin} (${smartStep})` : smartStep;
@@ -3226,7 +3222,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		remotePath: string,
 		origin: string,
 		line: number,
-		column: number
+		column: number,
 	): Promise<StackFrame> {
 		return this._sourceMaps
 			.MapToSource(localPath, content, line, column)
@@ -3234,27 +3230,29 @@ export class NodeDebugSession extends LoggingDebugSession {
 				if (mapresult) {
 					this.log(
 						"sm",
-						`_createStackFrameFromSourceMap: gen: '${localPath}' ${line}:${column} -> src: '${mapresult.path}' ${mapresult.line}:${mapresult.column}`
+						`_createStackFrameFromSourceMap: gen: '${localPath}' ${line}:${column} -> src: '${mapresult.path}' ${mapresult.line}:${mapresult.column}`,
 					);
 
 					return this._sameFile(
 						mapresult.path,
 						this._compareContents,
 						0,
-						mapresult.content
+						mapresult.content,
 					).then((same) => {
 						if (same) {
 							// use this mapping
 							const src = this._createSource(
 								true,
 								mapresult.path,
-								this.convertDebuggerPathToClient(mapresult.path)
+								this.convertDebuggerPathToClient(
+									mapresult.path,
+								),
 							);
 							return this._createStackFrameFromSource(
 								frame,
 								src,
 								mapresult.line,
-								mapresult.column
+								mapresult.column,
 							);
 						}
 
@@ -3262,14 +3260,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 						if (mapresult.content) {
 							this.log(
 								"sm",
-								`_createStackFrameFromSourceMap: source '${mapresult.path}' doesn't exist -> use inlined source`
+								`_createStackFrameFromSourceMap: source '${mapresult.path}' doesn't exist -> use inlined source`,
 							);
 							const sourceHandle = this._getInlinedContentHandle(
-								mapresult.content
+								mapresult.content,
 							);
 							origin = localize(
 								"origin.inlined.source.map",
-								"read-only inlined content from source map"
+								"read-only inlined content from source map",
 							);
 							const src = this._createSource(
 								true,
@@ -3277,20 +3275,20 @@ export class NodeDebugSession extends LoggingDebugSession {
 								undefined,
 								sourceHandle,
 								origin,
-								{ inlinePath: mapresult.path }
+								{ inlinePath: mapresult.path },
 							);
 							return this._createStackFrameFromSource(
 								frame,
 								src,
 								mapresult.line,
-								mapresult.column
+								mapresult.column,
 							);
 						}
 
 						// no source found
 						this.log(
 							"sm",
-							`_createStackFrameFromSourceMap: gen: '${localPath}' ${line}:${column} -> can't find source -> use generated file`
+							`_createStackFrameFromSourceMap: gen: '${localPath}' ${line}:${column} -> can't find source -> use generated file`,
 						);
 						return this._createStackFrameFromPath(
 							frame,
@@ -3299,14 +3297,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 							remotePath,
 							origin,
 							line,
-							column
+							column,
 						);
 					});
 				}
 
 				this.log(
 					"sm",
-					`_createStackFrameFromSourceMap: gen: '${localPath}' ${line}:${column} -> couldn't be mapped to source -> use generated file`
+					`_createStackFrameFromSourceMap: gen: '${localPath}' ${line}:${column} -> couldn't be mapped to source -> use generated file`,
 				);
 				return this._createStackFrameFromPath(
 					frame,
@@ -3315,7 +3313,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					remotePath,
 					origin,
 					line,
-					column
+					column,
 				);
 			});
 	}
@@ -3340,7 +3338,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		remotePath: string,
 		origin: string,
 		line: number,
-		column: number
+		column: number,
 	): Promise<StackFrame> {
 		const script_val = <V8Script>this._getValueFromCache(frame.script);
 		const script_id = script_val.id;
@@ -3353,7 +3351,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					src = this._createSource(
 						false,
 						name,
-						this.convertDebuggerPathToClient(localPath)
+						this.convertDebuggerPathToClient(localPath),
 					);
 				} else {
 					// we use the script's content streamed from node
@@ -3364,16 +3362,16 @@ export class NodeDebugSession extends LoggingDebugSession {
 						undefined,
 						sourceHandle,
 						origin,
-						{ remotePath: remotePath }
+						{ remotePath: remotePath },
 					); // assume it is a remote path
 				}
 				return this._createStackFrameFromSource(
 					frame,
 					src,
 					line,
-					column
+					column,
 				);
-			}
+			},
 		);
 	}
 
@@ -3394,7 +3392,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		frame: V8Frame,
 		src: Source | undefined,
 		line: number,
-		column: number
+		column: number,
 	): StackFrame {
 		const name = this._getFrameName(frame);
 		const frameReference = this._frameHandles.create(frame);
@@ -3403,7 +3401,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			name,
 			src,
 			this.convertDebuggerLineToClient(line),
-			this.convertDebuggerColumnToClient(column)
+			this.convertDebuggerColumnToClient(column),
 		);
 	}
 
@@ -3431,7 +3429,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		path: string,
 		compareContents: boolean,
 		script_id: number,
-		content?: string
+		content?: string,
 	): Promise<boolean> {
 		return this._existsFile(path).then((exists) => {
 			if (exists) {
@@ -3441,8 +3439,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 						content
 							? Promise.resolve(content)
 							: this._loadScript(script_id).then(
-									(script) => script.contents
-								),
+									(script) => script.contents,
+							  ),
 					])
 						.then((results) => {
 							let fileContents = results[0];
@@ -3512,55 +3510,55 @@ export class NodeDebugSession extends LoggingDebugSession {
 				key: "scope.global",
 				comment: ["https://github.com/Microsoft/vscode/issues/4569"],
 			},
-			"Global"
+			"Global",
 		),
 		localize(
 			{
 				key: "scope.local",
 				comment: ["https://github.com/Microsoft/vscode/issues/4569"],
 			},
-			"Local"
+			"Local",
 		),
 		localize(
 			{
 				key: "scope.with",
 				comment: ["https://github.com/Microsoft/vscode/issues/4569"],
 			},
-			"With"
+			"With",
 		),
 		localize(
 			{
 				key: "scope.closure",
 				comment: ["https://github.com/Microsoft/vscode/issues/4569"],
 			},
-			"Closure"
+			"Closure",
 		),
 		localize(
 			{
 				key: "scope.catch",
 				comment: ["https://github.com/Microsoft/vscode/issues/4569"],
 			},
-			"Catch"
+			"Catch",
 		),
 		localize(
 			{
 				key: "scope.block",
 				comment: ["https://github.com/Microsoft/vscode/issues/4569"],
 			},
-			"Block"
+			"Block",
 		),
 		localize(
 			{
 				key: "scope.script",
 				comment: ["https://github.com/Microsoft/vscode/issues/4569"],
 			},
-			"Script"
+			"Script",
 		),
 	];
 
 	protected scopesRequest(
 		response: DebugProtocol.ScopesResponse,
-		args: DebugProtocol.ScopesArguments
+		args: DebugProtocol.ScopesArguments,
 	): void {
 		const frame = this._frameHandles.get(args.frameId);
 		if (!frame) {
@@ -3569,7 +3567,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				2020,
 				"stack frame not valid",
 				null,
-				ErrorDestination.Telemetry
+				ErrorDestination.Telemetry,
 			);
 			return;
 		}
@@ -3619,7 +3617,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 									},
 									"Local ({0} of {1})",
 									scopesArgs.maxLocals,
-									scopesResponse.body.vscode_locals
+									scopesResponse.body.vscode_locals,
 								);
 							} else {
 								scopeName = NodeDebugSession.SCOPE_NAMES[type];
@@ -3628,7 +3626,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							scopeName = localize(
 								"scope.unknown",
 								"Unknown Scope Type: {0}",
-								type
+								type,
 							);
 						}
 
@@ -3639,9 +3637,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 									return new Scope(
 										scopeName,
 										this._variableHandles.create(
-											new ScopeContainer(scope, x, extra)
+											new ScopeContainer(scope, x, extra),
 										),
-										expensive
+										expensive,
 									);
 								}
 								return new Scope(scopeName, 0);
@@ -3649,7 +3647,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							.catch((error) => {
 								return new Scope(scopeName, 0);
 							});
-					})
+					}),
 				);
 			})
 			.then((scopes) => {
@@ -3662,7 +3660,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 								"https://github.com/Microsoft/vscode/issues/4569",
 							],
 						},
-						"Exception"
+						"Exception",
 					);
 					scopes.unshift(
 						new Scope(
@@ -3670,10 +3668,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 							this._variableHandles.create(
 								new PropertyContainer(
 									undefined,
-									this._exception.exception
-								)
-							)
-						)
+									this._exception.exception,
+								),
+							),
+						),
 					);
 				}
 
@@ -3693,7 +3691,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected variablesRequest(
 		response: DebugProtocol.VariablesResponse,
-		args: DebugProtocol.VariablesArguments
+		args: DebugProtocol.VariablesArguments,
 	): void {
 		const reference = args.variablesReference;
 		const variablesContainer = this._variableHandles.get(reference);
@@ -3740,7 +3738,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		obj: V8Object,
 		mode: FilterType,
 		start = 0,
-		count?: number
+		count?: number,
 	): Promise<Variable[]> {
 		if (obj && !obj.properties) {
 			// if properties are missing, this is an indication that we are running injected code which doesn't return the properties for large objects
@@ -3768,9 +3766,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 									return this._createVariable(
 										evalName,
 										item.name,
-										item.value
+										item.value,
 									);
-								})
+								}),
 							);
 						});
 				}
@@ -3785,7 +3783,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		let found_proto = false;
 		if (obj.properties) {
 			count = count || obj.properties.length;
-			for (let property of obj.properties) {
+			for (const property of obj.properties) {
 				if ("name" in property) {
 					// bug #19654: only extract properties with a name
 
@@ -3840,7 +3838,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		obj: V8Object | null,
 		properties: V8Property[],
 		doPreview = true,
-		start = 0
+		start = 0,
 	): Promise<Variable[]> {
 		return this._resolveValues(properties).then(() => {
 			return Promise.all<Variable>(
@@ -3875,7 +3873,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 						this.log(
 							"va",
-							`_createPropertyVariables: trigger getter`
+							`_createPropertyVariables: trigger getter`,
 						);
 						return this._node
 							.evaluate(args)
@@ -3884,14 +3882,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 									evalName,
 									name,
 									response.body,
-									doPreview
+									doPreview,
 								);
 							})
 							.catch((err) => {
 								return this._createVar(
 									this._getEvaluateName(evalName, name),
 									name,
-									"undefined"
+									"undefined",
 								);
 							});
 					} else {
@@ -3899,10 +3897,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 							evalName,
 							name,
 							val,
-							doPreview
+							doPreview,
 						);
 					}
-				})
+				}),
 			);
 		});
 	}
@@ -3915,7 +3913,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		evalName: string | undefined,
 		name: string,
 		val: V8Handle,
-		doPreview: boolean = true
+		doPreview = true,
 	): Promise<DebugProtocol.Variable> {
 		/*
 		if (!val) {
@@ -3943,12 +3941,12 @@ export class NodeDebugSession extends LoggingDebugSession {
 					val,
 					doPreview
 						? undefined
-						: NodeDebugSession.PREVIEW_MAX_STRING_LENGTH
+						: NodeDebugSession.PREVIEW_MAX_STRING_LENGTH,
 				);
 			case "number":
 				if (typeof simple.value === "number") {
 					return Promise.resolve(
-						this._createVar(en, name, simple.value.toString())
+						this._createVar(en, name, simple.value.toString()),
 					);
 				}
 				break;
@@ -3958,8 +3956,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 						this._createVar(
 							en,
 							name,
-							simple.value.toString().toLowerCase()
-						)
+							simple.value.toString().toLowerCase(),
+						),
 					); // node returns these boolean values capitalized
 				}
 				break;
@@ -3996,7 +3994,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							evalName,
 							name,
 							val,
-							doPreview
+							doPreview,
 						);
 
 					case "RegExp":
@@ -4007,9 +4005,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 									name,
 									object.text,
 									this._variableHandles.create(
-										new PropertyContainer(en, val)
-									)
-								)
+										new PropertyContainer(en, val),
+									),
+								),
 							);
 						}
 						break;
@@ -4019,7 +4017,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						return this._resolveValues(
 							object.constructorFunction
 								? [object.constructorFunction]
-								: []
+								: [],
 						).then((resolved: V8Function[]) => {
 							if (resolved.length > 0 && resolved[0]) {
 								const constructor_name = <string>(
@@ -4038,25 +4036,23 @@ export class NodeDebugSession extends LoggingDebugSession {
 									// promises and generators have a status attribute
 									value += ` { ${object.status} }`;
 								}
-							} else {
-								if (object.properties) {
-									return this._objectPreview(
-										object,
-										doPreview
-									).then((preview) => {
-										if (preview) {
-											value = `${value} ${preview}`;
-										}
-										return this._createVar(
-											en,
-											name,
-											value,
-											this._variableHandles.create(
-												new PropertyContainer(en, val)
-											)
-										);
-									});
-								}
+							} else if (object.properties) {
+								return this._objectPreview(
+									object,
+									doPreview,
+								).then((preview) => {
+									if (preview) {
+										value = `${value} ${preview}`;
+									}
+									return this._createVar(
+										en,
+										name,
+										value,
+										this._variableHandles.create(
+											new PropertyContainer(en, val),
+										),
+									);
+								});
 							}
 
 							return this._createVar(
@@ -4064,8 +4060,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 								name,
 								value,
 								this._variableHandles.create(
-									new PropertyContainer(en, val)
-								)
+									new PropertyContainer(en, val),
+								),
 							);
 						});
 					//break;
@@ -4092,9 +4088,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 						name,
 						value,
 						this._variableHandles.create(
-							new PropertyContainer(en, val)
-						)
-					)
+							new PropertyContainer(en, val),
+						),
+					),
 				);
 
 			case "frame":
@@ -4105,8 +4101,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 			this._createVar(
 				en,
 				name,
-				simple.value ? simple.value.toString() : "undefined"
-			)
+				simple.value ? simple.value.toString() : "undefined",
+			),
 		);
 	}
 
@@ -4116,14 +4112,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 		value: string,
 		ref?: number,
 		indexedVariables?: number,
-		namedVariables?: number
+		namedVariables?: number,
 	) {
 		const v: DebugProtocol.Variable = new Variable(
 			name,
 			value,
 			ref,
 			indexedVariables,
-			namedVariables
+			namedVariables,
 		);
 		if (evalName) {
 			v.evaluateName = evalName;
@@ -4133,7 +4129,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	private _getEvaluateName(
 		parentEvaluateName: string | undefined,
-		name: string
+		name: string,
 	): string | undefined {
 		if (parentEvaluateName === undefined) {
 			return undefined;
@@ -4160,7 +4156,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 */
 	private _objectPreview(
 		object: V8Object,
-		doPreview: boolean
+		doPreview: boolean,
 	): Promise<string | null> {
 		if (
 			doPreview &&
@@ -4174,7 +4170,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				undefined,
 				object,
 				object.properties.slice(0, NodeDebugSession.PREVIEW_PROPERTIES),
-				false
+				false,
 			).then((props) => {
 				let preview = "{";
 				for (let i = 0; i < props.length; i++) {
@@ -4182,10 +4178,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 					if (i < props.length - 1) {
 						preview += ", ";
-					} else {
-						if (propcnt > NodeDebugSession.PREVIEW_PROPERTIES) {
-							preview += " …";
-						}
+					} else if (propcnt > NodeDebugSession.PREVIEW_PROPERTIES) {
+						preview += " …";
 					}
 				}
 				preview += "}";
@@ -4203,7 +4197,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private _arrayPreview(
 		array: V8Object,
 		length: number,
-		doPreview: boolean
+		doPreview: boolean,
 	): Promise<string | null> {
 		if (doPreview && array && array.properties && length > 0) {
 			const previewProps = new Array<V8Property>();
@@ -4227,7 +4221,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				undefined,
 				array,
 				previewProps,
-				false
+				false,
 			).then((props) => {
 				let preview = "[";
 				for (let i = 0; i < props.length; i++) {
@@ -4235,10 +4229,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 					if (i < props.length - 1) {
 						preview += ", ";
-					} else {
-						if (length > NodeDebugSession.PREVIEW_PROPERTIES) {
-							preview += " …";
-						}
+					} else if (length > NodeDebugSession.PREVIEW_PROPERTIES) {
+						preview += " …";
 					}
 				}
 				preview += "]";
@@ -4256,7 +4248,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		evalName: string | undefined,
 		name: string,
 		array: V8Object,
-		doPreview: boolean
+		doPreview: boolean,
 	): Promise<Variable> {
 		return this._getArraySize(array).then((pair) => {
 			let indexedSize = 0;
@@ -4281,12 +4273,12 @@ export class NodeDebugSession extends LoggingDebugSession {
 						name,
 						v,
 						this._variableHandles.create(
-							new PropertyContainer(en, array)
+							new PropertyContainer(en, array),
 						),
 						indexedSize,
-						namedSize
+						namedSize,
 					);
-				}
+				},
 			);
 		});
 	}
@@ -4326,7 +4318,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private _createSetMapVariable(
 		evalName: string | undefined,
 		name: string,
-		obj: V8Handle
+		obj: V8Handle,
 	): Promise<Variable> {
 		const args = {
 			// initially we need only the size
@@ -4348,14 +4340,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 				`${typename}[${indexedSize}]`,
 				this._variableHandles.create(new SetMapContainer(en, obj)),
 				indexedSize,
-				namedSize
+				namedSize,
 			);
 		});
 	}
 
 	public _createSetMapProperties(
 		evalName: string | undefined,
-		obj: V8Handle
+		obj: V8Handle,
 	): Promise<Variable[]> {
 		const args = {
 			expression: `var r = {}; Object.keys(obj).forEach(k => { r[k] = obj[k] }); r`,
@@ -4371,7 +4363,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	public _createSetElements(
 		set: V8Handle,
 		start: number,
-		count: number
+		count: number,
 	): Promise<Variable[]> {
 		const args = {
 			expression: `var r = [], i = 0; set.forEach(v => { if (i >= ${start} && i < ${
@@ -4386,7 +4378,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			const properties = response.body.properties || [];
 			const selectedProperties = new Array<V8Property>();
 
-			for (let property of properties) {
+			for (const property of properties) {
 				if (isIndex(property.name)) {
 					selectedProperties.push(property);
 				}
@@ -4397,7 +4389,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				null,
 				selectedProperties,
 				true,
-				start
+				start,
 			);
 		});
 	}
@@ -4405,7 +4397,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	public _createMapElements(
 		map: V8Handle,
 		start: number,
-		count: number
+		count: number,
 	): Promise<Variable[]> {
 		// for each slot of the map we create three slots in a helper array: label, key, value
 		const args = {
@@ -4421,7 +4413,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			const properties = response.body.properties || [];
 			const selectedProperties = new Array<V8Property>();
 
-			for (let property of properties) {
+			for (const property of properties) {
 				if (isIndex(property.name)) {
 					selectedProperties.push(property);
 				}
@@ -4443,7 +4435,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 								this._createVariable(undefined, "key", key),
 								this._createVariable(undefined, "value", val),
 							]);
-						}
+						},
 					);
 
 					const x = <V8Object>(
@@ -4454,8 +4446,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 							undefined,
 							(start + i / 3).toString(),
 							<string>x.value,
-							this._variableHandles.create(expander)
-						)
+							this._variableHandles.create(expander),
+						),
 					);
 				}
 				return variables;
@@ -4469,7 +4461,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		evalName: string | undefined,
 		name: string,
 		val: V8Simple,
-		maxLength: number | undefined
+		maxLength: number | undefined,
 	): Promise<Variable> {
 		let str_val = <string>val.value;
 
@@ -4480,7 +4472,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				str_val = str_val.substr(0, maxLength) + "…";
 			}
 			return Promise.resolve(
-				this._createVar(en, name, this._escapeStringValue(str_val))
+				this._createVar(en, name, this._escapeStringValue(str_val)),
 			);
 		}
 
@@ -4501,12 +4493,12 @@ export class NodeDebugSession extends LoggingDebugSession {
 				return this._createVar(
 					en,
 					name,
-					this._escapeStringValue(str_val)
+					this._escapeStringValue(str_val),
 				);
 			});
 		} else {
 			return Promise.resolve(
-				this._createVar(en, name, this._escapeStringValue(str_val))
+				this._createVar(en, name, this._escapeStringValue(str_val)),
 			);
 		}
 	}
@@ -4524,7 +4516,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected setVariableRequest(
 		response: DebugProtocol.SetVariableResponse,
-		args: DebugProtocol.SetVariableArguments
+		args: DebugProtocol.SetVariableArguments,
 	): void {
 		const reference = args.variablesReference;
 		const name = args.name;
@@ -4564,7 +4556,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		frame: number,
 		scope: number,
 		name: string,
-		value: string
+		value: string,
 	): Promise<Variable> {
 		// first we are evaluating the new value
 
@@ -4589,7 +4581,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				return this._createVariable(
 					undefined,
 					"_setVariableValue",
-					response.body.newValue
+					response.body.newValue,
 				);
 			});
 		});
@@ -4598,7 +4590,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	public _setPropertyValue(
 		objHandle: number,
 		propName: string,
-		value: string
+		value: string,
 	): Promise<Variable> {
 		if (this._node.v8Version) {
 			// we are doing the evaluation of the new value and the assignment to an object property in a single evaluate.
@@ -4615,7 +4607,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				return this._createVariable(
 					undefined,
 					"_setpropertyvalue",
-					response.body
+					response.body,
 				);
 			});
 		}
@@ -4627,7 +4619,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected pauseRequest(
 		response: DebugProtocol.PauseResponse,
-		args: DebugProtocol.PauseArguments
+		args: DebugProtocol.PauseArguments,
 	): void {
 		this._node.command("suspend", null, (nodeResponse) => {
 			if (nodeResponse.success) {
@@ -4644,7 +4636,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected continueRequest(
 		response: DebugProtocol.ContinueResponse,
-		args: DebugProtocol.ContinueArguments
+		args: DebugProtocol.ContinueArguments,
 	): void {
 		this._disableSkipFiles = false;
 		this._node.command("continue", null, (nodeResponse) => {
@@ -4656,20 +4648,20 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected nextRequest(
 		response: DebugProtocol.NextResponse,
-		args: DebugProtocol.NextArguments
+		args: DebugProtocol.NextArguments,
 	): void {
 		this._node.command(
 			"continue",
 			{ stepaction: "next" },
 			(nodeResponse) => {
 				this._sendNodeResponse(response, nodeResponse);
-			}
+			},
 		);
 	}
 
 	protected stepInRequest(
 		response: DebugProtocol.StepInResponse,
-		args: DebugProtocol.StepInArguments
+		args: DebugProtocol.StepInArguments,
 	): void {
 		this._node.command("continue", { stepaction: "in" }, (nodeResponse) => {
 			this._sendNodeResponse(response, nodeResponse);
@@ -4678,7 +4670,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected stepOutRequest(
 		response: DebugProtocol.StepOutResponse,
-		args: DebugProtocol.StepOutArguments
+		args: DebugProtocol.StepOutArguments,
 	): void {
 		this._disableSkipFiles = false;
 		this._node.command(
@@ -4686,26 +4678,26 @@ export class NodeDebugSession extends LoggingDebugSession {
 			{ stepaction: "out" },
 			(nodeResponse) => {
 				this._sendNodeResponse(response, nodeResponse);
-			}
+			},
 		);
 	}
 
 	protected stepBackRequest(
 		response: DebugProtocol.StepBackResponse,
-		args: DebugProtocol.StepBackArguments
+		args: DebugProtocol.StepBackArguments,
 	): void {
 		this._node.command(
 			"continue",
 			{ stepaction: "back" },
 			(nodeResponse) => {
 				this._sendNodeResponse(response, nodeResponse);
-			}
+			},
 		);
 	}
 
 	protected reverseContinueRequest(
 		response: DebugProtocol.ReverseContinueResponse,
-		args: DebugProtocol.ReverseContinueArguments
+		args: DebugProtocol.ReverseContinueArguments,
 	): void {
 		this._disableSkipFiles = false;
 		this._node.command(
@@ -4713,13 +4705,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 			{ stepaction: "reverse" },
 			(nodeResponse) => {
 				this._sendNodeResponse(response, nodeResponse);
-			}
+			},
 		);
 	}
 
 	protected restartFrameRequest(
 		response: DebugProtocol.RestartFrameResponse,
-		args: DebugProtocol.RestartFrameArguments
+		args: DebugProtocol.RestartFrameArguments,
 	): void {
 		const restartFrameArgs: V8RestartFrameArgs = {
 			frame: undefined,
@@ -4733,7 +4725,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					2020,
 					"stack frame not valid",
 					null,
-					ErrorDestination.Telemetry
+					ErrorDestination.Telemetry,
 				);
 				return;
 			}
@@ -4750,9 +4742,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 					{ stepaction: "in" },
 					(stepInNodeResponse) => {
 						this._sendNodeResponse(response, stepInNodeResponse);
-					}
+					},
 				);
-			}
+			},
 		);
 	}
 
@@ -4760,7 +4752,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected evaluateRequest(
 		response: DebugProtocol.EvaluateResponse,
-		args: DebugProtocol.EvaluateArguments
+		args: DebugProtocol.EvaluateArguments,
 	): void {
 		const expression = args.expression;
 
@@ -4777,7 +4769,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					2020,
 					"stack frame not valid",
 					null,
-					ErrorDestination.Telemetry
+					ErrorDestination.Telemetry,
 				);
 				return;
 			}
@@ -4805,11 +4797,11 @@ export class NodeDebugSession extends LoggingDebugSession {
 								response.success = false;
 								response.message = localize(
 									"eval.not.available",
-									"not available"
+									"not available",
 								);
 							}
 							this.sendResponse(response);
-						}
+						},
 					);
 				} else {
 					response.success = false;
@@ -4819,7 +4811,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					) {
 						response.message = localize(
 							"eval.not.available",
-							"not available"
+							"not available",
 						);
 					} else if (resp.message.indexOf("SyntaxError: ") === 0) {
 						const m = resp.message
@@ -4828,14 +4820,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 						response.message = localize(
 							"eval.invalid.expression",
 							"invalid expression: {0}",
-							m
+							m,
 						);
 					} else {
 						response.message = resp.message;
 					}
 					this.sendResponse(response);
 				}
-			}
+			},
 		);
 	}
 
@@ -4843,7 +4835,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected sourceRequest(
 		response: DebugProtocol.SourceResponse,
-		args: DebugProtocol.SourceArguments
+		args: DebugProtocol.SourceArguments,
 	): void {
 		// first try to use 'source.sourceReference'
 		if (args.source && args.source.sourceReference) {
@@ -4867,8 +4859,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 						2026,
 						localize(
 							"source.not.found",
-							"Could not retrieve content."
-						)
+							"Could not retrieve content.",
+						),
 					);
 				});
 
@@ -4881,7 +4873,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	private sourceRequest2(
 		response: DebugProtocol.SourceResponse,
-		sourceReference: number
+		sourceReference: number,
 	): void {
 		// try to use 'sourceReference'
 		const srcSource = this._sourceHandles.get(sourceReference);
@@ -4913,8 +4905,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 							2026,
 							localize(
 								"source.not.found",
-								"Could not retrieve content."
-							)
+								"Could not retrieve content.",
+							),
 						);
 					});
 				return;
@@ -4927,7 +4919,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			2027,
 			"sourceRequest error: illegal handle",
 			null,
-			ErrorDestination.Telemetry
+			ErrorDestination.Telemetry,
 		);
 	}
 
@@ -4965,7 +4957,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			};
 
 			return this._node.scripts(args).then((nodeResponse) => {
-				for (let result of nodeResponse.body) {
+				for (const result of nodeResponse.body) {
 					if (result.name === scriptIdOrPath) {
 						// return the first exact match
 						return new Script(result);
@@ -4980,7 +4972,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected completionsRequest(
 		response: DebugProtocol.CompletionsResponse,
-		args: DebugProtocol.CompletionsArguments
+		args: DebugProtocol.CompletionsArguments,
 	): void {
 		const line = args.text;
 		const column = args.column;
@@ -4988,7 +4980,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		const prefix = line.substring(0, column);
 
 		let expression: string | undefined;
-		let dot = prefix.lastIndexOf(".");
+		const dot = prefix.lastIndexOf(".");
 		if (dot >= 0) {
 			const rest = prefix.substr(dot + 1); // everything between the '.' and the cursor
 			if (
@@ -5015,7 +5007,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						2020,
 						"stack frame not valid",
 						null,
-						ErrorDestination.Telemetry
+						ErrorDestination.Telemetry,
 					);
 					return;
 				}
@@ -5032,10 +5024,12 @@ export class NodeDebugSession extends LoggingDebugSession {
 					const set = new Set<string>();
 					const items = new Array<DebugProtocol.CompletionItem>();
 
-					let arrays = <string[]>JSON.parse(<string>resp.body.value);
+					const arrays = <string[]>(
+						JSON.parse(<string>resp.body.value)
+					);
 
 					for (let i = 0; i < arrays.length; i++) {
-						for (let name of arrays[i]) {
+						for (const name of arrays[i]) {
 							if (!isIndex(name) && !set.has(name)) {
 								set.add(name);
 
@@ -5045,7 +5039,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 								};
 								if (
 									!NodeDebugSession.PROPERTY_NAME_MATCHER.test(
-										name
+										name,
 									)
 								) {
 									// we cannot use dot notation
@@ -5093,7 +5087,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					2020,
 					"stack frame not valid",
 					null,
-					ErrorDestination.Telemetry
+					ErrorDestination.Telemetry,
 				);
 				return;
 			}
@@ -5115,7 +5109,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	}
 
 	protected scopesRequest2(
-		frame: V8Frame
+		frame: V8Frame,
 	): Promise<DebugProtocol.CompletionItem[]> {
 		const frameIx = frame.index;
 
@@ -5129,13 +5123,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 			.then((scopesResponse) => {
 				const scopes = scopesResponse.body.scopes;
 				return this._resolveValues(
-					scopes.map((scope) => scope.object)
+					scopes.map((scope) => scope.object),
 				).then((resolved) => {
 					const set = new Set<string | number>();
 					const items = new Array<DebugProtocol.CompletionItem>();
-					for (let r of resolved) {
+					for (const r of resolved) {
 						if (r && r.properties) {
-							for (let property of r.properties) {
+							for (const property of r.properties) {
 								if (
 									!isIndex(property.name) &&
 									!set.has(property.name)
@@ -5162,7 +5156,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected exceptionInfoRequest(
 		response: DebugProtocol.ExceptionInfoResponse,
-		args: DebugProtocol.ExceptionInfoArguments
+		args: DebugProtocol.ExceptionInfoArguments,
 	): void {
 		if (args.threadId !== NodeDebugSession.DUMMY_THREAD_ID) {
 			this.sendErrorResponse(
@@ -5170,7 +5164,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				2030,
 				"exceptionInfoRequest error: invalid thread {_thread}.",
 				{ _thread: args.threadId },
-				ErrorDestination.Telemetry
+				ErrorDestination.Telemetry,
 			);
 			return;
 		}
@@ -5197,7 +5191,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						return this._createProperties(
 							undefined,
 							exception,
-							"named"
+							"named",
 						)
 							.then((values) => {
 								if (
@@ -5250,7 +5244,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						2031,
 						"exceptionInfoRequest error",
 						undefined,
-						ErrorDestination.Telemetry
+						ErrorDestination.Telemetry,
 					);
 				});
 		} else {
@@ -5259,7 +5253,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				2032,
 				"exceptionInfoRequest error: no stored exception",
 				undefined,
-				ErrorDestination.Telemetry
+				ErrorDestination.Telemetry,
 			);
 		}
 	}
@@ -5268,13 +5262,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	protected loadedSourcesRequest(
 		response: DebugProtocol.LoadedSourcesResponse,
-		args: DebugProtocol.LoadedSourcesArguments
+		args: DebugProtocol.LoadedSourcesArguments,
 	) {
 		this._node
 			.scripts({ types: 4 })
 			.then((resp) => {
 				const sources = resp.body.map((script) =>
-					this._scriptToSource(script)
+					this._scriptToSource(script),
 				);
 				Promise.all(sources).then((result) => {
 					response.body = { sources: result };
@@ -5294,7 +5288,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	protected customRequest(
 		command: string,
 		response: DebugProtocol.Response,
-		args: any
+		args: any,
 	): void {
 		switch (command) {
 			case "toggleSkipFileStatus":
@@ -5323,7 +5317,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private sendNotExistErrorResponse(
 		response: DebugProtocol.Response,
 		attribute: string,
-		path: string
+		path: string,
 	) {
 		this.sendErrorResponse(
 			response,
@@ -5332,9 +5326,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 				"attribute.path.not.exist",
 				"Attribute '{0}' does not exist ('{1}').",
 				attribute,
-				"{path}"
+				"{path}",
 			),
-			{ path: path }
+			{ path: path },
 		);
 	}
 
@@ -5344,21 +5338,21 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private sendRelativePathErrorResponse(
 		response: DebugProtocol.Response,
 		attribute: string,
-		path: string
+		path: string,
 	) {
 		const format = localize(
 			"attribute.path.not.absolute",
 			"Attribute '{0}' is not absolute ('{1}'); consider adding '{2}' as a prefix to make it absolute.",
 			attribute,
 			"{path}",
-			"${workspaceFolder}/"
+			"${workspaceFolder}/",
 		);
 		this.sendErrorResponseWithInfoLink(
 			response,
 			2008,
 			format,
 			{ path: path },
-			20003
+			20003,
 		);
 	}
 
@@ -5370,7 +5364,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		code: number,
 		format: string,
 		variables: any,
-		infoId: number
+		infoId: number,
 	) {
 		this.sendErrorResponse(response, <DebugProtocol.Message>{
 			id: code,
@@ -5397,7 +5391,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 */
 	private _localToRemote(localPath: string): string {
 		if (this._remoteRoot && this._localRoot) {
-			let relPath = PathUtils.makeRelative2(this._localRoot, localPath);
+			const relPath = PathUtils.makeRelative2(this._localRoot, localPath);
 			let remotePath = PathUtils.join(this._remoteRoot, relPath);
 
 			if (/^[a-zA-Z]:[\/\\]/.test(this._remoteRoot)) {
@@ -5419,7 +5413,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 */
 	private _remoteToLocal(remotePath: string): string {
 		if (this._remoteRoot && this._localRoot) {
-			let relPath = PathUtils.makeRelative2(this._remoteRoot, remotePath);
+			const relPath = PathUtils.makeRelative2(
+				this._remoteRoot,
+				remotePath,
+			);
 			let localPath = PathUtils.join(this._localRoot, relPath);
 
 			if (process.platform === "win32") {
@@ -5437,7 +5434,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	private _sendNodeResponse(
 		response: DebugProtocol.Response,
-		nodeResponse: NodeV8Response
+		nodeResponse: NodeV8Response,
 	): void {
 		if (nodeResponse.success) {
 			this.sendResponse(response);
@@ -5449,9 +5446,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 					2015,
 					localize(
 						"VSND2015",
-						"Request '{_request}' was cancelled because Node.js is unresponsive."
+						"Request '{_request}' was cancelled because Node.js is unresponsive.",
 					),
-					{ _request: nodeResponse.command }
+					{ _request: nodeResponse.command },
 				);
 			} else if (errmsg.indexOf("timeout") >= 0) {
 				this.sendErrorResponse(
@@ -5459,9 +5456,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 					2016,
 					localize(
 						"VSND2016",
-						"Node.js did not respond to request '{_request}' in a reasonable amount of time."
+						"Node.js did not respond to request '{_request}' in a reasonable amount of time.",
 					),
-					{ _request: nodeResponse.command }
+					{ _request: nodeResponse.command },
 				);
 			} else {
 				this.sendErrorResponse(
@@ -5469,7 +5466,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					2013,
 					"Node.js request '{_request}' failed (reason: {_error}).",
 					{ _request: nodeResponse.command, _error: errmsg },
-					ErrorDestination.Telemetry
+					ErrorDestination.Telemetry,
 				);
 			}
 		}
@@ -5490,7 +5487,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	private _resolveValues(mirrors: V8Ref[]): Promise<(V8Object | null)[]> {
 		const needLookup = new Array<number>();
-		for (let mirror of mirrors) {
+		for (const mirror of mirrors) {
 			if (!mirror.value && mirror.ref) {
 				if (needLookup.indexOf(mirror.ref) < 0) {
 					needLookup.push(mirror.ref);
@@ -5521,11 +5518,11 @@ export class NodeDebugSession extends LoggingDebugSession {
 	}
 
 	private _resolveToCache(
-		handles: number[]
+		handles: number[],
 	): Promise<(V8Object | undefined)[]> {
 		const lookup = new Array<number>();
 
-		for (let handle of handles) {
+		for (const handle of handles) {
 			const val = this._refCache.get(handle);
 			if (!val) {
 				if (handle >= 0) {
@@ -5544,7 +5541,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			return this._node
 				.command2(cmd, { handles: lookup })
 				.then((resp) => {
-					for (let key in resp.body) {
+					for (const key in resp.body) {
 						const obj = resp.body[key];
 						const handle: number = obj.handle;
 						this._cache(handle, obj);
@@ -5576,7 +5573,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				});
 		} else {
 			return Promise.resolve(
-				handles.map((handle) => this._refCache.get(handle))
+				handles.map((handle) => this._refCache.get(handle)),
 			);
 		}
 	}
@@ -5584,7 +5581,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private _rememberEntryLocation(
 		path: string,
 		line: number,
-		column: number
+		column: number,
 	): void {
 		if (path) {
 			this._entryPath = path;
@@ -5623,7 +5620,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		return this._node
 			.scripts(args)
 			.then((resp) => {
-				for (let result of resp.body) {
+				for (const result of resp.body) {
 					if (result.name === scriptIdOrPath) {
 						// return the first exact match
 						return result.id;
@@ -5644,10 +5641,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 			if (NodeDebugSession.JS_EXTENSIONS.indexOf(ext) >= 0) {
 				return true;
 			}
-		} else {
-			if (Path.basename(path).toLowerCase() === "www") {
-				return true;
-			}
+		} else if (Path.basename(path).toLowerCase() === "www") {
+			return true;
 		}
 
 		// look inside file
@@ -5711,7 +5706,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			const TASK_KILL = Path.join(
 				process.env["SystemRoot"] || "C:\\WINDOWS",
 				"System32",
-				"taskkill.exe"
+				"taskkill.exe",
 			);
 
 			// when killing a process in Windows its child processes are *not* killed but become root processes.
@@ -5747,7 +5742,7 @@ const LOGMESSAGE_VARIABLE_REGEXP = /{(.*?)}/g;
 function logMessageToExpression(msg: string) {
 	msg = msg.replace(/%/g, "%%");
 
-	let args: string[] = [];
+	const args: string[] = [];
 	let format = msg.replace(LOGMESSAGE_VARIABLE_REGEXP, (match, group) => {
 		const a = group.trim();
 		if (a) {

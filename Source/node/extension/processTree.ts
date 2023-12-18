@@ -3,9 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-"use strict";
-
-import { spawn, ChildProcessWithoutNullStreams } from "child_process";
+import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import { join } from "path";
 
 export class ProcessTreeNode {
@@ -15,12 +13,12 @@ export class ProcessTreeNode {
 		public pid: number,
 		public ppid: number,
 		public command: string,
-		public args: string
+		public args: string,
 	) {}
 }
 
 export async function getProcessTree(
-	rootPid: number
+	rootPid: number,
 ): Promise<ProcessTreeNode | undefined> {
 	const map = new Map<number, ProcessTreeNode>();
 
@@ -32,7 +30,7 @@ export async function getProcessTree(
 				if (pid !== ppid) {
 					map.set(pid, new ProcessTreeNode(pid, ppid, command, args));
 				}
-			}
+			},
 		);
 	} catch (err) {
 		return undefined;
@@ -61,8 +59,8 @@ export function getProcesses(
 		ppid: number,
 		command: string,
 		args: string,
-		date?: number
-	) => void
+		date?: number,
+	) => void,
 ): Promise<void> {
 	// returns a function that aggregates chunks of data until one or more complete lines are received and passes them to a callback.
 	function lines(callback: (a: string) => void) {
@@ -90,7 +88,7 @@ export function getProcesses(
 				process.env["WINDIR"] || "C:\\Windows",
 				"System32",
 				"wbem",
-				"WMIC.exe"
+				"WMIC.exe",
 			);
 			proc = spawn(wmic, [
 				"process",
@@ -101,7 +99,7 @@ export function getProcesses(
 			proc.stdout.on(
 				"data",
 				lines((line) => {
-					let matches = CMD_PAT.exec(line.trim());
+					const matches = CMD_PAT.exec(line.trim());
 					if (matches && matches.length === 5) {
 						const pid = Number(matches[4]);
 						const ppid = Number(matches[3]);
@@ -127,7 +125,7 @@ export function getProcesses(
 							one(pid, ppid, command, args, date);
 						}
 					}
-				})
+				}),
 			);
 		} else if (process.platform === "darwin") {
 			// OS X
@@ -149,7 +147,7 @@ export function getProcesses(
 					if (!isNaN(pid) && !isNaN(ppid)) {
 						one(pid, ppid, command, args);
 					}
-				})
+				}),
 			);
 		} else {
 			// linux
@@ -185,7 +183,7 @@ export function getProcesses(
 					if (!isNaN(pid) && !isNaN(ppid)) {
 						one(pid, ppid, command, args);
 					}
-				})
+				}),
 			);
 		}
 
@@ -220,7 +218,7 @@ export function getProcesses(
 					//resolve();
 				} else if (code > 0) {
 					reject(
-						new Error(`process terminated with exit code: ${code}`)
+						new Error(`process terminated with exit code: ${code}`),
 					);
 				}
 			}
