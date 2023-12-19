@@ -539,11 +539,10 @@ export class NodeV8Protocol extends EE.EventEmitter {
 		message.type = typ;
 		message.seq = this._sequence++;
 		const json = JSON.stringify(message);
-		const data =
-			"Content-Length: " +
-			Buffer.byteLength(json, "utf8") +
-			"\r\n\r\n" +
-			json;
+		const data = `Content-Length: ${Buffer.byteLength(
+			json,
+			"utf8",
+		)}\r\n\r\n${json}`;
 		if (this._writableStream) {
 			this._writableStream.write(data);
 		}
@@ -551,11 +550,12 @@ export class NodeV8Protocol extends EE.EventEmitter {
 
 	private internalDispatch(message: NodeV8Message): void {
 		switch (message.type) {
-			case "event":
+			case "event": {
 				const e = <NodeV8Event>message;
 				this.emitEvent(e);
 				break;
-			case "response":
+			}
+			case "response": {
 				if (this._unresponsiveMode) {
 					this._unresponsiveMode = false;
 					this.emitEvent(
@@ -572,6 +572,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 					clb(response);
 				}
 				break;
+			}
 			default:
 				break;
 		}
@@ -607,13 +608,14 @@ export class NodeV8Protocol extends EE.EventEmitter {
 					for (let i = 0; i < lines.length; i++) {
 						const pair = lines[i].split(/: +/);
 						switch (pair[0]) {
-							case "V8-Version":
+							case "V8-Version": {
 								const match0 = pair[1].match(/(\d+(?:\.\d+)+)/);
 								if (match0 && match0.length === 2) {
 									this.v8Version = match0[1];
 								}
 								break;
-							case "Embedding-Host":
+							}
+							case "Embedding-Host": {
 								const match = pair[1].match(
 									/node\sv(\d+)\.(\d+)\.(\d+)/,
 								);
@@ -633,9 +635,11 @@ export class NodeV8Protocol extends EE.EventEmitter {
 									this.hostVersion = match1[1];
 								}
 								break;
-							case "Content-Length":
+							}
+							case "Content-Length": {
 								this._contentLength = +pair[1];
 								break;
+							}
 						}
 					}
 					this._rawData = this._rawData.slice(

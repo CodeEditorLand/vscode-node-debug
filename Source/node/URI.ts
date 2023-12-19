@@ -36,13 +36,15 @@ export class URI {
 			if (base) {
 				if (PathUtils.isAbsolutePath(base)) {
 					if (isWindows(base)) {
-						path =
-							stripLast(base, "\\") +
-							"\\" +
-							stripFirst(path, "\\");
+						path = `${stripLast(base, "\\")}\\${stripFirst(
+							path,
+							"\\",
+						)}`;
 					} else {
-						path =
-							stripLast(base, "/") + "/" + stripFirst(path, "/");
+						path = `${stripLast(base, "/")}/${stripFirst(
+							path,
+							"/",
+						)}`;
 					}
 				} else {
 					throw new Error("base path not absolute");
@@ -63,10 +65,10 @@ export class URI {
 		path = path.replace(/\/\.\//g, "/");
 
 		if (path[0] !== "/") {
-			path = "/" + path;
+			path = `/${path}`;
 		}
 
-		path = encodeURI("file://" + path);
+		path = encodeURI(`file://${path}`);
 
 		const u = new URI();
 		u._uri = path;
@@ -99,8 +101,6 @@ export class URI {
 		}
 		return URI.file(uri, base);
 	}
-
-	constructor() {}
 
 	uri(): string {
 		return this._uri;

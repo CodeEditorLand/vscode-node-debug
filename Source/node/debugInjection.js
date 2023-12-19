@@ -4,28 +4,28 @@
  *--------------------------------------------------------------------------------------------*/
 
 !(() => {
-	var CHUNK_SIZE = 100; // break large objects into chunks of this size
-	var INDEX_PATTERN = /^(0|[1-9][0-9]*)$/;
+	const CHUNK_SIZE = 100; // break large objects into chunks of this size
+	const INDEX_PATTERN = /^(0|[1-9][0-9]*)$/;
 
 	// try to load 'vm' even if 'require' isn't available in the current context
-	var vm = process.mainModule
+	const vm = process.mainModule
 		? process.mainModule.require("vm")
 		: require("vm");
 
 	// the following objects should be available in all versions of node.js
-	var LookupMirror = vm.runInDebugContext("LookupMirror");
-	var DebugCommandProcessor = vm.runInDebugContext("DebugCommandProcessor");
+	const LookupMirror = vm.runInDebugContext("LookupMirror");
+	const DebugCommandProcessor = vm.runInDebugContext("DebugCommandProcessor");
 
 	/*
 	 * Retrieving index and named properties of an object requires some work in recent versions of node
 	 * because 'propertyNames' no longer takes a filter argument.
 	 */
-	var indexedPropertyCount;
-	var namedPropertyCount;
-	var hasManyProperties;
-	var namedProperties;
+	let indexedPropertyCount;
+	let namedPropertyCount;
+	let hasManyProperties;
+	let namedProperties;
 	try {
-		var PropertyKind = vm.runInDebugContext("PropertyKind");
+		const PropertyKind = vm.runInDebugContext("PropertyKind");
 		if (!PropertyKind) {
 			throw new Error("undef");
 		}
@@ -41,9 +41,9 @@
 		namedProperties = (mirror) => mirror.propertyNames(PropertyKind.Named);
 	} catch (error) {
 		indexedPropertyCount = (mirror) => {
-			var n = 0;
-			var names = mirror.propertyNames();
-			for (var i = 0; i < names.length; i++) {
+			let n = 0;
+			const names = mirror.propertyNames();
+			for (let i = 0; i < names.length; i++) {
 				if (isIndex(names[i])) {
 					n++;
 				}
@@ -51,9 +51,9 @@
 			return n;
 		};
 		namedPropertyCount = (mirror) => {
-			var n = 0;
-			var names = mirror.propertyNames();
-			for (var i = 0; i < names.length; i++) {
+			let n = 0;
+			const names = mirror.propertyNames();
+			for (let i = 0; i < names.length; i++) {
 				if (!isIndex(names[i])) {
 					n++;
 				}
@@ -63,10 +63,10 @@
 		hasManyProperties = (mirror, limit) =>
 			mirror.propertyNames().length >= limit;
 		namedProperties = (mirror) => {
-			var named = [];
-			var names = mirror.propertyNames();
-			for (var i = 0; i < names.length; i++) {
-				var name = names[i];
+			const named = [];
+			const names = mirror.propertyNames();
+			for (let i = 0; i < names.length; i++) {
+				const name = names[i];
 				if (!isIndex(name)) {
 					named.push(name);
 				}
@@ -75,7 +75,7 @@
 		};
 	}
 
-	var isIndex = (name) => {
+	const isIndex = (name) => {
 		switch (typeof name) {
 			case "number":
 				return true;
@@ -91,17 +91,19 @@
 	 * This made it possible to drop large objects from the 'refs' array (that is part of every protocol response).
 	 */
 	try {
-		var JSONProtocolSerializer = vm.runInDebugContext(
+		const JSONProtocolSerializer = vm.runInDebugContext(
 			"JSONProtocolSerializer",
 		);
 
 		JSONProtocolSerializer.prototype.serializeReferencedObjects =
 			function () {
-				var content = [];
-				for (var i = 0; i < this.mirrors_.length; i++) {
-					var m = this.mirrors_[i];
+				const content = [];
+				for (let i = 0; i < this.mirrors_.length; i++) {
+					const m = this.mirrors_[i];
 
-					if (m.isArray()) continue;
+					if (m.isArray()) {
+						continue;
+					}
 
 					if (m.isObject()) {
 						if (m.handle() < 0) {
@@ -128,40 +130,40 @@
 		request,
 		response,
 	) => {
-		var handle = request.arguments.handle;
-		var start = request.arguments.start;
-		var count = request.arguments.count;
-		var mode = request.arguments.mode;
-		var mirror = LookupMirror(handle);
+		const handle = request.arguments.handle;
+		const start = request.arguments.start;
+		const count = request.arguments.count;
+		const mode = request.arguments.mode;
+		const mirror = LookupMirror(handle);
 		if (!mirror) {
-			return response.failed("Object #" + handle + "# not found");
+			return response.failed(`Object #${handle}# not found`);
 		}
-		var result = [];
+		const result = [];
 		if (mode === "named" || mode === "all") {
 			if (mirror.isArray() || mirror.isObject()) {
-				var names = namedProperties(mirror);
-				for (var i = 0; i < names.length; i++) {
-					var name = names[i];
-					var p = mirror.property(name);
+				const names = namedProperties(mirror);
+				for (let i = 0; i < names.length; i++) {
+					const name = names[i];
+					const p = mirror.property(name);
 					result.push({ name: name, value: p.value() });
 				}
 			}
 		}
 		if (mode === "indexed" || mode === "all") {
 			if (mirror.isArray()) {
-				var a = mirror.indexedPropertiesFromRange(
+				const a = mirror.indexedPropertiesFromRange(
 					start,
 					start + count - 1,
 				);
-				for (var i = 0; i < a.length; i++) {
+				for (let i = 0; i < a.length; i++) {
 					result.push({
 						name: (start + i).toString(),
 						value: a[i].value(),
 					});
 				}
 			} else if (mirror.isObject()) {
-				for (var i = 0, j = start; i < count; i++, j++) {
-					var p = mirror.property(j.toString());
+				for (let i = 0, j = start; i < count; i++, j++) {
+					const p = mirror.property(j.toString());
 					result.push({ name: j.toString(), value: p.value() });
 				}
 			}
@@ -175,9 +177,9 @@
 	 * If the passed mirror object is a large array or object this function
 	 * returns the mirror without its properties but with two size attributes ('vscode_namedCnt', 'vscode_indexedCnt') instead.
 	 */
-	var dehydrate = (mirror) => {
-		var namedCnt = -1;
-		var indexedCnt = -1;
+	const dehydrate = (mirror) => {
+		let namedCnt = -1;
+		let indexedCnt = -1;
 
 		if (mirror.isArray()) {
 			namedCnt = namedPropertyCount(mirror);
@@ -193,10 +195,11 @@
 				case "Int32Array":
 				case "Uint32Array":
 				case "Float32Array":
-				case "Float64Array":
+				case "Float64Array": {
 					namedCnt = namedPropertyCount(mirror);
 					indexedCnt = indexedPropertyCount(mirror);
 					break;
+				}
 				default:
 					break;
 			}
@@ -222,11 +225,11 @@
 		request,
 		response,
 	) {
-		var result = this.lookupRequest_(request, response);
+		const result = this.lookupRequest_(request, response);
 		if (!result && response.body) {
-			var handles = request.arguments.handles;
-			for (var i = 0; i < handles.length; i++) {
-				var handle = handles[i];
+			const handles = request.arguments.handles;
+			for (let i = 0; i < handles.length; i++) {
+				const handle = handles[i];
 				response.body[handle] = dehydrate(response.body[handle]);
 			}
 		}
@@ -241,7 +244,7 @@
 		request,
 		response,
 	) {
-		var result = this.evaluateRequest_(request, response);
+		const result = this.evaluateRequest_(request, response);
 		if (!result) {
 			response.body = dehydrate(response.body);
 		}
@@ -255,20 +258,20 @@
 		request,
 		response,
 	) {
-		var result = this.scopesRequest_(request, response);
+		const result = this.scopesRequest_(request, response);
 		if (!result) {
-			var maxLocals = request.arguments.maxLocals;
-			var scopes = response.body.scopes;
-			for (var i = 0; i < scopes.length - 1; i++) {
-				var details = scopes[i].details_.details_;
+			const maxLocals = request.arguments.maxLocals;
+			const scopes = response.body.scopes;
+			for (let i = 0; i < scopes.length - 1; i++) {
+				const details = scopes[i].details_.details_;
 				if (details && details[0] === 1) {
 					// locals
-					var locals = details[1];
-					var names = Object.keys(locals);
+					const locals = details[1];
+					const names = Object.keys(locals);
 					if (names.length > maxLocals) {
-						var locals2 = {};
-						for (var j = 0; j < maxLocals; j++) {
-							var name = names[j];
+						const locals2 = {};
+						for (let j = 0; j < maxLocals; j++) {
+							const name = names[j];
 							locals2[name] = locals[name];
 						}
 						details[1] = locals2;

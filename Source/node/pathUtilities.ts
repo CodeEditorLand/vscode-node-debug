@@ -150,7 +150,7 @@ export function findOnPath(program: string, args_env: any): string | undefined {
 				const executableExtensions = env["PATHEXT"].toUpperCase();
 				for (const path of lines) {
 					const ext = Path.extname(path).toUpperCase();
-					if (ext && executableExtensions.indexOf(ext + ";") > 0) {
+					if (ext && executableExtensions.indexOf(`${ext};`) > 0) {
 						return path;
 					}
 				}
@@ -225,7 +225,7 @@ export function isAbsolutePath(path: string | null): boolean {
 export function normalize(path: string): string {
 	path = path.replace(/\\/g, "/");
 	if (/^[a-zA-Z]\:\//.test(path)) {
-		path = "/" + path;
+		path = `/${path}`;
 	}
 	path = Path.normalize(path); // use node's normalize to remove '<dir>/..' etc.
 	path = path.replace(/\\/g, "/");
@@ -250,9 +250,9 @@ export function join(absPath: string, relPath: string): string {
 	absPath = normalize(absPath);
 	relPath = normalize(relPath);
 	if (absPath.charAt(absPath.length - 1) === "/") {
-		absPath = absPath + relPath;
+		absPath += relPath;
 	} else {
-		absPath = absPath + "/" + relPath;
+		absPath = `${absPath}/${relPath}`;
 	}
 	absPath = Path.normalize(absPath);
 	absPath = absPath.replace(/\\/g, "/");

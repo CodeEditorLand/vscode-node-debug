@@ -24,7 +24,7 @@ export function subsystemLinuxPresent(): boolean {
 function windowsPathToWSLPath(
 	windowsPath: string | undefined,
 ): string | undefined {
-	if (!isWindows || !windowsPath) {
+	if (!(isWindows && windowsPath)) {
 		return undefined;
 	}
 	if (path.isAbsolute(windowsPath)) {

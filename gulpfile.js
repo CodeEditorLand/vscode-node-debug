@@ -3,30 +3,30 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-var gulp = require("gulp");
-var path = require("path");
-var ts = require("gulp-typescript");
-var sourcemaps = require("gulp-sourcemaps");
-var tslint = require("gulp-tslint");
-var filter = require("gulp-filter");
-var uglify = require("gulp-uglify");
-var del = require("del");
-var typescript = require("typescript");
+const gulp = require("gulp");
+const path = require("path");
+const ts = require("gulp-typescript");
+const sourcemaps = require("gulp-sourcemaps");
+const tslint = require("gulp-tslint");
+const filter = require("gulp-filter");
+const uglify = require("gulp-uglify");
+const del = require("del");
+const typescript = require("typescript");
 
-var tsProject = ts.createProject("./src/tsconfig.json", { typescript });
-var nls = require("vscode-nls-dev");
+const tsProject = ts.createProject("./src/tsconfig.json", { typescript });
+const nls = require("vscode-nls-dev");
 
-var inlineMap = true;
-var inlineSource = false;
+const inlineMap = true;
+const inlineSource = false;
 
-var watchedSources = ["src/**/*", "!src/tests/data/**"];
+const watchedSources = ["src/**/*", "!src/tests/data/**"];
 
-var scripts = ["src/node/terminateProcess.sh"];
+const scripts = ["src/node/terminateProcess.sh"];
 
-var scripts2 = ["src/node/debugInjection.js"];
+const scripts2 = ["src/node/debugInjection.js"];
 
-var outDest = "out";
-var webPackedDest = "dist";
+const outDest = "out";
+const webPackedDest = "dist";
 
 const transifexProjectName = "vscode-extensions";
 const transifexExtensionName = "vscode-node-debug";
@@ -46,14 +46,14 @@ gulp.task("internal-compile", () => {
 });
 
 gulp.task("internal-copy-scripts", () => {
-	return gulp.src(scripts).pipe(gulp.dest(outDest + "/node"));
+	return gulp.src(scripts).pipe(gulp.dest(`${outDest}/node`));
 });
 
 gulp.task("internal-minify-scripts", () => {
 	return gulp
 		.src(scripts2)
 		.pipe(uglify())
-		.pipe(gulp.dest(outDest + "/node"));
+		.pipe(gulp.dest(`${outDest}/node`));
 });
 
 // compile and copy everything to outDest
@@ -91,7 +91,7 @@ gulp.task(
 );
 
 gulp.task("nls-bundle-create", () => {
-	var r = tsProject
+	const r = tsProject
 		.src()
 		.pipe(sourcemaps.init())
 		.pipe(tsProject())
@@ -146,7 +146,7 @@ gulp.task(
 //---- internal
 
 function compile() {
-	var r = tsProject.src().pipe(sourcemaps.init()).pipe(tsProject()).js;
+	let r = tsProject.src().pipe(sourcemaps.init()).pipe(tsProject()).js;
 
 	if (inlineMap && inlineSource) {
 		r = r.pipe(sourcemaps.write());
@@ -164,9 +164,9 @@ function compile() {
 	return r.pipe(gulp.dest(outDest));
 }
 
-var allTypeScript = ["src/**/*.ts"];
+const allTypeScript = ["src/**/*.ts"];
 
-var tslintFilter = ["**", "!**/*.d.ts"];
+const tslintFilter = ["**", "!**/*.d.ts"];
 
 gulp.task("tslint", (done) => {
 	gulp.src(allTypeScript)

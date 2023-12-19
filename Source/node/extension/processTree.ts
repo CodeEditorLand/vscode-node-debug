@@ -47,7 +47,7 @@ export async function getProcessTree(
 		}
 	}
 
-	if (!isNaN(rootPid) && rootPid > 0) {
+	if (!Number.isNaN(rootPid) && rootPid > 0) {
 		return map.get(rootPid);
 	}
 	return map.get(0);
@@ -105,7 +105,10 @@ export function getProcesses(
 						const ppid = Number(matches[3]);
 						const date = Number(matches[2]);
 						let args = matches[1].trim();
-						if (!isNaN(pid) && !isNaN(ppid) && args) {
+						if (
+							!(Number.isNaN(pid) || Number.isNaN(ppid)) &&
+							args
+						) {
 							let command = args;
 							if (args[0] === '"') {
 								const end = args.indexOf('"', 1);
@@ -144,7 +147,7 @@ export function getProcesses(
 					const command = line.substr(12, 256).trim();
 					const args = line.substr(269 + command.length);
 
-					if (!isNaN(pid) && !isNaN(ppid)) {
+					if (!(Number.isNaN(pid) || Number.isNaN(ppid))) {
 						one(pid, ppid, command, args);
 					}
 				}),
@@ -169,7 +172,7 @@ export function getProcesses(
 
 					let pos = args.indexOf(command);
 					if (pos >= 0) {
-						pos = pos + command.length;
+						pos += command.length;
 						while (pos < args.length) {
 							if (args[pos] === " ") {
 								break;
@@ -180,7 +183,7 @@ export function getProcesses(
 						args = args.substr(pos + 1);
 					}
 
-					if (!isNaN(pid) && !isNaN(ppid)) {
+					if (!(Number.isNaN(pid) || Number.isNaN(ppid))) {
 						one(pid, ppid, command, args);
 					}
 				}),

@@ -750,48 +750,55 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		if (!description) {
 			switch (reason) {
-				case "step":
+				case "step": {
 					description = localize(
 						"reason.description.step",
 						"Paused on step",
 					);
 					break;
-				case "breakpoint":
+				}
+				case "breakpoint": {
 					description = localize(
 						"reason.description.breakpoint",
 						"Paused on breakpoint",
 					);
 					break;
-				case "exception":
+				}
+				case "exception": {
 					description = localize(
 						"reason.description.exception",
 						"Paused on exception",
 					);
 					break;
-				case "pause":
+				}
+				case "pause": {
 					description = localize(
 						"reason.description.user_request",
 						"Paused on user request",
 					);
 					break;
-				case "entry":
+				}
+				case "entry": {
 					description = localize(
 						"reason.description.entry",
 						"Paused on entry",
 					);
 					break;
-				case "debugger_statement":
+				}
+				case "debugger_statement": {
 					description = localize(
 						"reason.description.debugger_statement",
 						"Paused on debugger statement",
 					);
 					break;
-				case "frame_entry":
+				}
+				case "frame_entry": {
 					description = localize(
 						"reason.description.restart",
 						"Paused on frame entry",
 					);
 					break;
+				}
 			}
 		}
 		(<DebugProtocol.StoppedEvent>e).body.description = description;
@@ -861,7 +868,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			if (!this._skipFiles) {
 				this._skipFiles = new Array<string>();
 			}
-			this._skipFiles.push("!" + resource);
+			this._skipFiles.push(`!${resource}`);
 		} else {
 			if (!this._skipFiles) {
 				this._skipFiles = new Array<string>();
@@ -944,7 +951,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		this._variableHandles.reset();
 		this._frameHandles.reset();
 		this._refCache = new Map<number, V8Object>();
-		this.log("rc", `_stopped: new ref cache`);
+		this.log("rc", "_stopped: new ref cache");
 	}
 
 	/**
@@ -1075,10 +1082,11 @@ export class NodeDebugSession extends LoggingDebugSession {
 			switch (args.console) {
 				case "internalConsole":
 				case "integratedTerminal":
-				case "externalTerminal":
+				case "externalTerminal": {
 					this._console = args.console;
 					break;
-				default:
+				}
+				default: {
 					this.sendErrorResponse(
 						response,
 						2028,
@@ -1089,6 +1097,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						),
 					);
 					return;
+				}
 			}
 		} else if (
 			typeof args.externalConsole === "boolean" &&
@@ -1179,7 +1188,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				return;
 			}
 			if (!FS.existsSync(programPath)) {
-				if (!FS.existsSync(programPath + ".js")) {
+				if (!FS.existsSync(`${programPath}.js`)) {
 					this.sendNotExistErrorResponse(
 						response,
 						"program",
@@ -1203,7 +1212,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			}
 		}
 
-		if (!args.runtimeArgs && !this._noDebug) {
+		if (!(args.runtimeArgs || this._noDebug)) {
 			runtimeArgs = ["--nolazy"];
 		}
 
@@ -1365,7 +1374,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				// a port was specified in launch config
 
 				// only if the default runtime 'node' is used without arguments
-				if (!args.runtimeExecutable && !args.runtimeArgs) {
+				if (!(args.runtimeExecutable || args.runtimeArgs)) {
 					// use the specfied port
 					launchArgs.push(`--debug-brk=${port}`);
 				}
@@ -1469,8 +1478,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						// since node starts in a terminal, we cannot track it with an 'exit' handler
 						// plan for polling after we have gotten the process pid.
 						this._pollForNodeProcess =
-							!args.runtimeExecutable && // only if no 'runtimeExecutable' is specified
-							!args.useWSL; // it will not work with WSL either
+							!(args.runtimeExecutable || // only if no 'runtimeExecutable' is specifiedargs.useWSL); // it will not work with WSL either
 
 						if (this._noDebug) {
 							this.sendResponse(response);
@@ -1499,7 +1507,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							{ _error: runResponse.message },
 						);
 						this._terminated(
-							"terminal error: " + runResponse.message,
+							`terminal error: ${runResponse.message}`,
 						);
 					}
 				},
@@ -1595,7 +1603,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		let cli = "";
 		for (const a of args) {
 			if (a.indexOf(" ") >= 0) {
-				cli += "'" + a + "'";
+				cli += `'${a}'`;
 			} else {
 				cli += a;
 			}
@@ -2004,7 +2012,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						.then((resp) => {
 							this.log(
 								"la",
-								`_injectDebuggerExtensions: code injection successful`,
+								"_injectDebuggerExtensions: code injection successful",
 							);
 							this._nodeInjectionAvailable = true;
 							return true;
@@ -2361,7 +2369,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			source.sourceReference > 0
 		) {
 			const srcSource = this._sourceHandles.get(source.sourceReference);
-			if (srcSource && srcSource.scriptId) {
+			if (srcSource?.scriptId) {
 				this._updateBreakpoints(
 					response,
 					null,
@@ -2408,7 +2416,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					// if generated and source are the same we don't need a sourcemap
 					this.log(
 						"bp",
-						`_mapSourceAndUpdateBreakpoints: source and generated are same -> ignore sourcemap`,
+						"_mapSourceAndUpdateBreakpoints: source and generated are same -> ignore sourcemap",
 					);
 					generated = "";
 				}
@@ -2492,16 +2500,18 @@ export class NodeDebugSession extends LoggingDebugSession {
 				// try to match breakpoints
 				for (const breakpoint of nodeResponse.body.breakpoints) {
 					switch (breakpoint.type) {
-						case "scriptId":
+						case "scriptId": {
 							if (scriptId === breakpoint.script_id) {
 								toClear.push(breakpoint.number);
 							}
 							break;
-						case "scriptRegExp":
+						}
+						case "scriptRegExp": {
 							if (path_regexp === breakpoint.script_regexp) {
 								toClear.push(breakpoint.number);
 							}
 							break;
+						}
 					}
 				}
 
@@ -2532,7 +2542,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	/*
 	 * Clear breakpoints by their ids.
 	 */
-	private _clearBreakpoints(ids: Array<number>): Promise<void> {
+	private _clearBreakpoints(ids: number[]): Promise<void> {
 		return Promise.all(
 			ids.map((id) => this._node.clearBreakpoint({ breakpoint: id })),
 		)
@@ -2754,7 +2764,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (/^[a-zA-Z]:\\/.test(path)) {
 			const u = escPath.substring(0, 1).toUpperCase();
 			const l = u.toLowerCase();
-			escPath = "[" + l + u + "]" + escPath.substring(1);
+			escPath = `[${l}${u}]${escPath.substring(1)}`;
 		}
 
 		/*
@@ -2774,7 +2784,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		}
 		*/
 
-		const pathRegex = "^(.*[\\/\\\\])?" + escPath + "$"; // skips drive letters
+		const pathRegex = `^(.*[\\/\\\\])?${escPath}$`; // skips drive letters
 		return pathRegex;
 	}
 
@@ -3794,15 +3804,17 @@ export class NodeDebugSession extends LoggingDebugSession {
 					}
 
 					switch (mode) {
-						case "all":
+						case "all": {
 							selectedProperties.push(property);
 							break;
-						case "named":
+						}
+						case "named": {
 							if (!isIndex(name)) {
 								selectedProperties.push(property);
 							}
 							break;
-						case "indexed":
+						}
+						case "indexed": {
 							if (isIndex(name)) {
 								const ix = +name;
 								if (ix >= start && ix < start + count) {
@@ -3810,6 +3822,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 								}
 							}
 							break;
+						}
 					}
 				}
 			}
@@ -3873,7 +3886,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 						this.log(
 							"va",
-							`_createPropertyVariables: trigger getter`,
+							"_createPropertyVariables: trigger getter",
 						);
 						return this._node
 							.evaluate(args)
@@ -3943,14 +3956,15 @@ export class NodeDebugSession extends LoggingDebugSession {
 						? undefined
 						: NodeDebugSession.PREVIEW_MAX_STRING_LENGTH,
 				);
-			case "number":
+			case "number": {
 				if (typeof simple.value === "number") {
 					return Promise.resolve(
 						this._createVar(en, name, simple.value.toString()),
 					);
 				}
 				break;
-			case "boolean":
+			}
+			case "boolean": {
 				if (typeof simple.value === "boolean") {
 					return Promise.resolve(
 						this._createVar(
@@ -3961,6 +3975,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					); // node returns these boolean values capitalized
 				}
 				break;
+			}
 
 			case "set":
 			case "map":
@@ -3974,7 +3989,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			case "regexp":
 			case "promise":
 			case "generator":
-			case "error":
+			case "error": {
 				const object = <V8Object>val;
 				let value = <string>object.className;
 
@@ -3997,7 +4012,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							doPreview,
 						);
 
-					case "RegExp":
+					case "RegExp": {
 						if (typeof object.text === "string") {
 							return Promise.resolve(
 								this._createVar(
@@ -4011,6 +4026,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							);
 						}
 						break;
+					}
 
 					case "Generator":
 					case "Object":
@@ -4064,23 +4080,20 @@ export class NodeDebugSession extends LoggingDebugSession {
 								),
 							);
 						});
-					//break;
-
-					case "Function":
-					case "Error":
-					default:
+					default: {
 						if (object.text) {
 							let text = object.text;
 							if (text.indexOf("\n") >= 0) {
 								// replace body of function with '...'
 								const pos = text.indexOf("{");
 								if (pos > 0) {
-									text = text.substring(0, pos) + "{ … }";
+									text = `${text.substring(0, pos)}{ … }`;
 								}
 							}
 							value = text;
 						}
 						break;
+					}
 				}
 				return Promise.resolve(
 					this._createVar(
@@ -4092,8 +4105,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						),
 					),
 				);
-
-			case "frame":
+			}
 			default:
 				break;
 		}
@@ -4141,7 +4153,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		let nameAccessor: string;
 		if (/^[a-zA-Z_$][a-zA-Z_$0-9]*$/.test(name)) {
-			nameAccessor = "." + name;
+			nameAccessor = `.${name}`;
 		} else if (/^\d+$/.test(name)) {
 			nameAccessor = `[${name}]`;
 		} else {
@@ -4298,13 +4310,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 			const args = {
 				expression:
 					array.className === "ArrayBuffer"
-						? `JSON.stringify([ array.byteLength, 1 ])`
-						: `JSON.stringify([ array.length, Object.keys(array).length+1-array.length ])`,
+						? "JSON.stringify([ array.byteLength, 1 ])"
+						: "JSON.stringify([ array.length, Object.keys(array).length+1-array.length ])",
 				disable_break: true,
 				additional_context: [{ name: "array", handle: array.handle }],
 			};
 
-			this.log("va", `_getArraySize: array.length`);
+			this.log("va", "_getArraySize: array.length");
 			return this._node.evaluate(args).then((response) => {
 				return JSON.parse(<string>response.body.value);
 			});
@@ -4322,7 +4334,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	): Promise<Variable> {
 		const args = {
 			// initially we need only the size
-			expression: `JSON.stringify([ obj.size, Object.keys(obj).length ])`,
+			expression: "JSON.stringify([ obj.size, Object.keys(obj).length ])",
 			disable_break: true,
 			additional_context: [{ name: "obj", handle: obj.handle }],
 		};
@@ -4350,7 +4362,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 		obj: V8Handle,
 	): Promise<Variable[]> {
 		const args = {
-			expression: `var r = {}; Object.keys(obj).forEach(k => { r[k] = obj[k] }); r`,
+			expression:
+				"var r = {}; Object.keys(obj).forEach(k => { r[k] = obj[k] }); r",
 			disable_break: true,
 			additional_context: [{ name: "obj", handle: obj.handle }],
 		};
@@ -4469,7 +4482,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		if (typeof maxLength === "number") {
 			if (str_val.length > maxLength) {
-				str_val = str_val.substr(0, maxLength) + "…";
+				str_val = `${str_val.substr(0, maxLength)}…`;
 			}
 			return Promise.resolve(
 				this._createVar(en, name, this._escapeStringValue(str_val)),
@@ -4481,13 +4494,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 			NodeDebugSession.LONG_STRING_MATCHER.exec(str_val)
 		) {
 			const args = {
-				expression: `str`,
+				expression: "str",
 				disable_break: true,
 				additional_context: [{ name: "str", handle: val.handle }],
 				maxStringLength: NodeDebugSession.MAX_STRING_LENGTH,
 			};
 
-			this.log("va", `_createStringVariable: get full string`);
+			this.log("va", "_createStringVariable: get full string");
 			return this._node.evaluate(args).then((response) => {
 				str_val = <string>response.body.value;
 				return this._createVar(
@@ -4838,13 +4851,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 		args: DebugProtocol.SourceArguments,
 	): void {
 		// first try to use 'source.sourceReference'
-		if (args.source && args.source.sourceReference) {
+		if (args.source?.sourceReference) {
 			this.sourceRequest2(response, args.source.sourceReference);
 			return;
 		}
 
 		// then try to use 'source.path'
-		if (args.source && args.source.path) {
+		if (args.source?.path) {
 			this._loadScript(this._pathToScript(args.source.path))
 				.then((script) => {
 					response.body = {
@@ -5030,7 +5043,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 					for (let i = 0; i < arrays.length; i++) {
 						for (const name of arrays[i]) {
-							if (!isIndex(name) && !set.has(name)) {
+							if (!(isIndex(name) || set.has(name))) {
 								set.add(name);
 
 								const pi: DebugProtocol.CompletionItem = {
@@ -5128,11 +5141,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 					const set = new Set<string | number>();
 					const items = new Array<DebugProtocol.CompletionItem>();
 					for (const r of resolved) {
-						if (r && r.properties) {
+						if (r?.properties) {
 							for (const property of r.properties) {
 								if (
-									!isIndex(property.name) &&
-									!set.has(property.name)
+									!(
+										isIndex(property.name) ||
+										set.has(property.name)
+									)
 								) {
 									set.add(property.name);
 									items.push({
@@ -5228,7 +5243,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							response.body.description &&
 							stack.indexOf(response.body.description) === 0
 						) {
-							delete response.body.description;
+							response.body.description = undefined;
 						}
 
 						response.body.details = {
@@ -5291,12 +5306,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 		args: any,
 	): void {
 		switch (command) {
-			case "toggleSkipFileStatus":
+			case "toggleSkipFileStatus": {
 				this.toggleSkippingResource(response, args.resource);
 				break;
-			default:
+			}
+			default: {
 				super.customRequest(command, response, args);
 				break;
+			}
 		}
 	}
 
@@ -5371,9 +5388,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			format: format,
 			variables: variables,
 			showUser: true,
-			url:
-				"http://go.microsoft.com/fwlink/?linkID=534832#_" +
-				infoId.toString(),
+			url: `http://go.microsoft.com/fwlink/?linkID=534832#_${infoId.toString()}`,
 			urlLabel: localize("more.information", "More Information"),
 		});
 	}
@@ -5382,7 +5397,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 * send a line of text to the 'console' channel.
 	 */
 	private outLine(message: string) {
-		this.sendEvent(new OutputEvent(message + "\n", "console"));
+		this.sendEvent(new OutputEvent(`${message}\n`, "console"));
 	}
 
 	/**
@@ -5679,8 +5694,8 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		const i1 = parseInt(n1);
 		const i2 = parseInt(n2);
-		const isNum1 = !isNaN(i1);
-		const isNum2 = !isNaN(i2);
+		const isNum1 = !Number.isNaN(i1);
+		const isNum2 = !Number.isNaN(i2);
 
 		if (isNum1 && !isNum2) {
 			return 1; // numbers after names

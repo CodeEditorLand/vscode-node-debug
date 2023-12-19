@@ -94,7 +94,7 @@ export class SourceMaps implements ISourceMaps {
 
 		generatedCodeGlobs = generatedCodeGlobs || [];
 		if (generatedCodeDirectory) {
-			generatedCodeGlobs.push(generatedCodeDirectory + "/**/*.js"); // backward compatibility: turn old outDir into a glob pattern
+			generatedCodeGlobs.push(`${generatedCodeDirectory}/**/*.js`); // backward compatibility: turn old outDir into a glob pattern
 		}
 
 		// try to find all source files upfront asynchroneously
@@ -192,12 +192,7 @@ export class SourceMaps implements ISourceMaps {
 							Bias.LEAST_UPPER_BOUND,
 						);
 					}
-					if (
-						mr &&
-						mr.source &&
-						mr.line !== null &&
-						mr.column !== null
-					) {
+					if (mr?.source && mr.line !== null && mr.column !== null) {
 						return false; // we have a corresponding source and could map line to it -> stop
 					}
 					return true; // we have a corresponding source but could not map line to it -> skip
@@ -232,12 +227,7 @@ export class SourceMaps implements ISourceMaps {
 							Bias.LEAST_UPPER_BOUND,
 						);
 					}
-					if (
-						mr &&
-						mr.source &&
-						mr.line !== null &&
-						mr.column !== null
-					) {
+					if (mr?.source && mr.line !== null && mr.column !== null) {
 						return {
 							path: mr.source,
 							content: (<any>mr).content,
@@ -300,7 +290,7 @@ export class SourceMaps implements ISourceMaps {
 					// use heuristic: change extension to ".js" and find a map for it
 					const pos = pathToSource.lastIndexOf(".");
 					if (pos >= 0) {
-						pathToGenerated = pathToSource.substr(0, pos) + ".js";
+						pathToGenerated = `${pathToSource.substr(0, pos)}.js`;
 						return this._findGeneratedToSourceMapping(
 							pathToGenerated,
 						);
@@ -313,9 +303,9 @@ export class SourceMaps implements ISourceMaps {
 					// heuristic for VSCode extension host support:
 					// we know that the plugin has an "out" directory next to the "src" directory
 					// TODO: get rid of this and use glob patterns instead
-					const srcSegment = Path.sep + "src" + Path.sep;
+					const srcSegment = `${Path.sep}src${Path.sep}`;
 					if (pathToGenerated.indexOf(srcSegment) >= 0) {
-						const outSegment = Path.sep + "out" + Path.sep;
+						const outSegment = `${Path.sep}out${Path.sep}`;
 						return this._findGeneratedToSourceMapping(
 							pathToGenerated.replace(srcSegment, outSegment),
 						);
@@ -359,7 +349,7 @@ export class SourceMaps implements ISourceMaps {
 				}
 
 				// heuristic: try to find map file side-by-side to the generated source
-				const map_path = pathToGenerated + ".map";
+				const map_path = `${pathToGenerated}.map`;
 				if (FS.existsSync(map_path)) {
 					return this._getSourceMap(
 						URI.file(map_path),
@@ -422,7 +412,7 @@ export class SourceMaps implements ISourceMaps {
 					return URI.parse(uri, Path.dirname(pathToGenerated));
 				} else {
 					this._log(
-						`_findSourceMapUrl: source map url found at end of generated content`,
+						"_findSourceMapUrl: source map url found at end of generated content",
 					);
 					return URI.parse(uri);
 				}
@@ -508,10 +498,10 @@ export class SourceMaps implements ISourceMaps {
 						);
 					}
 				} catch (e) {
-					throw new Error(`exception while processing data url`);
+					throw new Error("exception while processing data url");
 				}
 			}
-			throw new Error(`exception while processing data url`);
+			throw new Error("exception while processing data url");
 		}
 
 		if (uri.isHTTP()) {
@@ -561,7 +551,7 @@ export class SourceMaps implements ISourceMaps {
 			});
 		}
 
-		throw new Error(`url is not a valid source map`);
+		throw new Error("url is not a valid source map");
 	}
 
 	/**
@@ -785,7 +775,7 @@ export class SourceMap {
 			// if path starts with a drive letter convert path to a file url so that the source-map library can handle it
 			if (/^[a-zA-Z]\:\//.test(path)) {
 				// Windows drive letter must be prefixed with a slash
-				path = encodeURI("file:///" + path);
+				path = encodeURI(`file:///${path}`);
 			}
 			return path;
 		}

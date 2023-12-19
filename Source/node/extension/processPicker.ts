@@ -65,14 +65,14 @@ export async function resolveProcessId(
 			// debug port
 			config.port = Number(matches[4]);
 			config.protocol = matches[3];
-			delete config.processId;
+			config.processId = undefined;
 		} else {
 			// protocol and port
 			if (matches[1]) {
 				// debug port
 				config.port = Number(matches[2]);
 				config.protocol = matches[1];
-				delete config.processId;
+				config.processId = undefined;
 			} else {
 				// process id
 				const pid = Number(matches[2]);
@@ -84,7 +84,7 @@ export async function resolveProcessId(
 				);
 				if (debugType) {
 					// processID is handled, so turn this config into a normal port attach configuration
-					delete config.processId;
+					config.processId = undefined;
 					config.port =
 						debugType === "legacy-node2"
 							? INSPECTOR_PORT_DEFAULT

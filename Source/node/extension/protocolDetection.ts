@@ -261,7 +261,7 @@ function getPidListeningOnPortUnix(port: number): Promise<number> {
 			}
 
 			const pidMatch = stdout.match(/p(\d+)/);
-			if (pidMatch && pidMatch[1]) {
+			if (pidMatch?.[1]) {
 				resolve(Number(pidMatch[1]));
 			} else {
 				resolve(-1);

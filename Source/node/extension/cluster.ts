@@ -24,21 +24,21 @@ export class Cluster {
 		folder: vscode.WorkspaceFolder | undefined,
 		config: vscode.DebugConfiguration,
 	) {
-		this.clusters.set(config.name, new Cluster(folder, config));
+		Cluster.clusters.set(config.name, new Cluster(folder, config));
 	}
 
 	static startSession(session: vscode.DebugSession) {
-		const cluster = this.clusters.get(session.name);
+		const cluster = Cluster.clusters.get(session.name);
 		if (cluster) {
 			cluster.startWatching(session);
 		}
 	}
 
 	static stopSession(session: vscode.DebugSession) {
-		const cluster = this.clusters.get(session.name);
+		const cluster = Cluster.clusters.get(session.name);
 		if (cluster) {
 			cluster.stopWatching();
-			this.clusters.delete(session.name);
+			Cluster.clusters.delete(session.name);
 		}
 	}
 

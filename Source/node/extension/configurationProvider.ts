@@ -15,7 +15,7 @@ import { Logger, mkdirP, writeToConsole } from "./utilities";
 const DEBUG_SETTINGS = "debug.node";
 const SHOW_USE_WSL_IS_DEPRECATED_WARNING_SETTING =
 	"showUseWslIsDeprecatedWarning";
-const DEFAULT_JS_PATTERNS: ReadonlyArray<string> = [
+const DEFAULT_JS_PATTERNS: readonly string[] = [
 	"*.js",
 	"*.es6",
 	"*.jsx",
@@ -59,7 +59,7 @@ export class NodeConfigurationProvider
 		token?: vscode.CancellationToken,
 	): Promise<vscode.DebugConfiguration | undefined> {
 		// if launch.json is missing or empty
-		if (!config.type && !config.request && !config.name) {
+		if (!(config.type || config.request || config.name)) {
 			config = createLaunchConfigFromContext(folder, true, config);
 
 			if (!config.program) {
@@ -118,7 +118,7 @@ export class NodeConfigurationProvider
 		// remove 'useWSL' on all platforms but Windows
 		if (process.platform !== "win32" && config.useWSL) {
 			this._logger.debug("useWSL attribute ignored on non-Windows OS.");
-			delete config.useWSL;
+			config.useWSL = undefined;
 		}
 
 		// "nvm" support
@@ -270,7 +270,7 @@ export class NodeConfigurationProvider
 						return;
 					}
 					switch (selected.id) {
-						case 1:
+						case 1: {
 							vscode.workspace
 								.getConfiguration(DEBUG_SETTINGS)
 								.update(
@@ -279,6 +279,7 @@ export class NodeConfigurationProvider
 									vscode.ConfigurationTarget.Global,
 								);
 							break;
+						}
 					}
 				});
 		}
@@ -404,7 +405,7 @@ function createLaunchConfigFromContext(
 		skipFiles: ["<node_internals>/**"],
 	};
 
-	if (existingConfig && existingConfig.noDebug) {
+	if (existingConfig?.noDebug) {
 		config["noDebug"] = true;
 	}
 
@@ -495,11 +496,7 @@ function createLaunchConfigFromContext(
 
 			let dir = "";
 			const tsConfig = loadJSON(folder, "tsconfig.json");
-			if (
-				tsConfig &&
-				tsConfig.compilerOptions &&
-				tsConfig.compilerOptions.outDir
-			) {
+			if (tsConfig?.compilerOptions?.outDir) {
 				const outDir = <string>tsConfig.compilerOptions.outDir;
 				if (!isAbsolute(outDir)) {
 					dir = outDir;
@@ -512,7 +509,7 @@ function createLaunchConfigFromContext(
 				}
 				config["preLaunchTask"] = "tsc: build - tsconfig.json";
 			}
-			config["outFiles"] = ["${workspaceFolder}/" + dir + "**/*.js"];
+			config["outFiles"] = [`\${workspaceFolder}/${dir}**/*.js`];
 		}
 	}
 
@@ -585,7 +582,7 @@ function guessProgramFromPackage(
 				resolve &&
 				path &&
 				!fs.existsSync(path) &&
-				!fs.existsSync(path + ".js")
+				!fs.existsSync(`${path}.js`)
 			) {
 				return undefined;
 			}
@@ -623,9 +620,10 @@ function nvsStandardArchName(arch) {
 		case "x64":
 		case "amd64":
 			return "x64";
-		case "arm":
+		case "arm": {
 			const arm_version = (process.config.variables as any).arm_version;
-			return arm_version ? "armv" + arm_version + "l" : "arm";
+			return arm_version ? `armv${arm_version}l` : "arm";
+		}
 		default:
 			return arch;
 	}
@@ -641,7 +639,7 @@ function parseVersionString(versionString) {
 
 	const match = versionRegex.exec(versionString);
 	if (!match) {
-		throw new Error("Invalid version string: " + versionString);
+		throw new Error(`Invalid version string: ${versionString}`);
 	}
 
 	const nvsFormat = !!(match[2] || match[8]);

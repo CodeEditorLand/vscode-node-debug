@@ -67,7 +67,7 @@ function toggleSkippingFile(res: string | number): void {
 
 	if (!resource) {
 		const activeEditor = vscode.window.activeTextEditor;
-		resource = activeEditor && activeEditor.document.fileName;
+		resource = activeEditor?.document.fileName;
 	}
 
 	if (resource && vscode.debug.activeDebugSession) {
