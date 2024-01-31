@@ -5,20 +5,22 @@
 
 //@ts-check
 
-const path = require("path");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
+'use strict';
+
+const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
-	target: "node", // vscode extensions run in a Node.js-context
-	mode: "none",
+	target: 'node', // vscode extensions run in a Node.js-context
+	mode: 'none',
 	entry: {
-		extension: "./src/node/extension/extension.ts",
-		nodeDebug: "./src/node/nodeDebug.ts",
+		extension: './src/node/extension/extension.ts',
+		nodeDebug: './src/node/nodeDebug.ts'
 	},
 	output: {
-		filename: "[name].js",
-		path: path.resolve(__dirname, "dist"),
+		filename: '[name].js',
+		path: path.resolve(__dirname, 'dist'),
 		libraryTarget: "commonjs2",
 		devtoolModuleFilenameTemplate: "../[resource-path]",
 	},
@@ -27,46 +29,41 @@ const config = {
 	},
 	//devtool: 'source-map',	// source maps don't really work
 	externals: {
-		vscode: "commonjs vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed
+		vscode: "commonjs vscode" // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed
 	},
-	resolve: {
-		// support reading TypeScript and JavaScript files
-		extensions: [".ts", ".js"],
+	resolve: { // support reading TypeScript and JavaScript files
+		extensions: ['.ts', '.js']
 	},
 	module: {
-		rules: [
-			{
-				test: /\.ts$/,
-				exclude: /node_modules/,
-				use: [
-					{
-						loader: "ts-loader",
-					},
-				],
-			},
-		],
+		rules: [{
+			test: /\.ts$/,
+			exclude: /node_modules/,
+			use: [{
+				loader: 'ts-loader',
+			}]
+		}]
 	},
 	plugins: [
 		new CopyWebpackPlugin({
 			patterns: [
-				{ from: "./out/node/debugInjection.js", to: "." },
-				{ from: "./src/node/terminateProcess.sh", to: "." },
+				{ from: './out/node/debugInjection.js', to: '.' },
+				{ from: './src/node/terminateProcess.sh', to: '.' }
 			],
 			options: {
-				concurrency: 100,
-			},
-		}),
-	],
-};
+				concurrency: 100
+			}
+		})
+	]
+}
 
-if (process.argv.includes("--vscode-nls")) {
+if (process.argv.includes('--vscode-nls')) {
 	// rewrite nls call when being asked for
 	config.module.rules.unshift({
-		loader: "vscode-nls-dev/lib/webpack-loader",
+		loader: 'vscode-nls-dev/lib/webpack-loader',
 		options: {
-			base: path.join(__dirname, "src"),
-		},
-	});
+			base: path.join(__dirname, 'src')
+		}
+	})
 }
 
 module.exports = config;
