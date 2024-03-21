@@ -476,7 +476,7 @@
 		"tslint-microsoft-contrib": "6.2.0",
 		"tsutils": "3.17.1",
 		"typescript": "~3.7.2",
-		"typescript-esbuild": "latest",
+		"typescript-esbuild": "0.4.5",
 		"vsce": "^1.88.0",
 		"vscode-debugadapter-testsupport": "1.48.0",
 		"vscode-debugprotocol": "1.48.0",
