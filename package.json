@@ -1,16 +1,37 @@
 {
-	"activationEvents": [
-		"onDebugResolve:legacy-node",
-		"onCommand:extension.pickNodeProcess",
-		"onCommand:extension.node-debug.toggleSkippingFile",
-		"onCommand:extension.node-debug.attachNodeProcess",
-		"onCommand:extension.node-debug.startAutoAttach"
-	],
-	"capabilities": {
-		"untrustedWorkspaces": {
-			"supported": true
-		},
-		"virtualWorkspaces": false
+	"name": "node-debug",
+	"displayName": "[Deprecated] Node Debug (legacy)",
+	"version": "0.0.1",
+	"private": false,
+	"description": "%extension.description%",
+	"homepage": "https://github.com/CodeEditorLand/Foundation#readme",
+	"bugs": {
+		"url": "https://github.com/CodeEditorLand/Foundation/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/CodeEditorLand/Foundation.git"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "Playform",
+		"email": "Hello@Playform.Cloud",
+		"url": "https://playform.cloud"
+	},
+	"type": "module",
+	"main": "./dist/extension.js",
+	"scripts": {
+		"build": "gulp build",
+		"bump": "npm version patch -m 'bump to %s'",
+		"nodemon": "nodemon --debug --nolazy ./dist/nodeDebug.js --server=4711",
+		"package": "gulp prepare-for-webpack && webpack --mode production --vscode-nls && vsce package --yarn",
+		"prepublishOnly": "TypeScriptESBuild 'Source/**/*.ts'",
+		"prepublish": "gulp build",
+		"publish": "gulp prepare-for-webpack && webpack --mode production --vscode-nls && vsce publish",
+		"translations-export": "gulp translations-export",
+		"tslint": "gulp tslint",
+		"vscode:prepublish": "gulp prepare-for-webpack && webpack --mode production --vscode-nls",
+		"watch": "gulp watch"
 	},
 	"contributes": {
 		"breakpoints": [
@@ -419,6 +440,16 @@
 			]
 		}
 	},
+	"activationEvents": [
+		"onDebugResolve:legacy-node",
+		"onCommand:extension.pickNodeProcess",
+		"onCommand:extension.node-debug.toggleSkippingFile",
+		"onCommand:extension.node-debug.attachNodeProcess",
+		"onCommand:extension.node-debug.startAutoAttach"
+	],
+	"resolutions": {
+		"gulp/**/yargs-parser": "^5.0.0-security.0"
+	},
 	"dependencies": {
 		"glob": "7.1.6",
 		"minimatch": "3.0.4",
@@ -427,7 +458,6 @@
 		"vscode-debugadapter": "1.48.0",
 		"vscode-nls": "5.0.0"
 	},
-	"description": "%extension.description%",
 	"devDependencies": {
 		"@types/mocha": "8.2.0",
 		"@types/node": "^12.7.3",
@@ -455,28 +485,17 @@
 		"webpack-cli": "~3.3.12",
 		"yargs-parser": "5.0.0-security.0"
 	},
-	"displayName": "[Deprecated] Node Debug (legacy)",
 	"extensionDependencies": [
 		"ms-vscode.node-debug2"
 	],
+	"publishConfig": {
+		"access": "public"
+	},
 	"icon": "images/node-debug-icon.png",
-	"main": "./dist/extension.js",
-	"name": "node-debug",
-	"resolutions": {
-		"gulp/**/yargs-parser": "^5.0.0-security.0"
-	},
-	"scripts": {
-		"build": "gulp build",
-		"bump": "npm version patch -m 'bump to %s'",
-		"nodemon": "nodemon --debug --nolazy ./dist/nodeDebug.js --server=4711",
-		"package": "gulp prepare-for-webpack && webpack --mode production --vscode-nls && vsce package --yarn",
-		"prepublish": "gulp build",
-		"prepublishOnly": "TypeScriptESBuild 'Source/**/*.ts'",
-		"publish": "gulp prepare-for-webpack && webpack --mode production --vscode-nls && vsce publish",
-		"translations-export": "gulp translations-export",
-		"tslint": "gulp tslint",
-		"vscode:prepublish": "gulp prepare-for-webpack && webpack --mode production --vscode-nls",
-		"watch": "gulp watch"
-	},
-	"type": "module"
+	"capabilities": {
+		"untrustedWorkspaces": {
+			"supported": true
+		},
+		"virtualWorkspaces": false
+	}
 }
