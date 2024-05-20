@@ -688,7 +688,6 @@ export class NodeDebugSession extends LoggingDebugSession {
 			}
 			this._skipFiles.push(resource);
 		}
-
 		this.sendResponse(response);
 	}
 
@@ -1198,7 +1197,6 @@ export class NodeDebugSession extends LoggingDebugSession {
 			}
 			cli += ' ';
 		}
-
 		this.outLine(cli);
 	}
 
@@ -1273,7 +1271,6 @@ export class NodeDebugSession extends LoggingDebugSession {
 			}
 			this._localRoot = localRoot;
 		}
-
 		this._remoteRoot = args.remoteRoot;
 
 		if (!this._sourceMaps) {
@@ -1320,7 +1317,6 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (!port) {
 			port = 5858;
 		}
-
 		this._port = port;
 
 		let address: string;
