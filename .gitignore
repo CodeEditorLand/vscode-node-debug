@@ -1,10 +1,7 @@
-.DS_Store
-package-lock.json
 /dist/
 /node_modules/
 /out/
 /plugin/
 /upload/
-npm-debug.log
 package.nls.*.json
 node-debug-*.vsix
