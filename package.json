@@ -427,9 +427,9 @@
 	},
 	"description": "%extension.description%",
 	"devDependencies": {
-		"@types/node": "^20.14.2",
+		"@types/node": "20.14.2",
 		"del": "7.1.0",
-		"ts-loader": "~9.5.1",
+		"ts-loader": "9.5.1",
 		"tsutils": "3.21.0",
 		"yargs-parser": "21.1.1"
 	},
@@ -441,7 +441,7 @@
 	"main": "./dist/extension.js",
 	"name": "node-debug",
 	"resolutions": {
-		"gulp/**/yargs-parser": "^5.0.0-security.0"
+		"gulp/**/yargs-parser": "5.0.0-security.0"
 	},
 	"scripts": {
 		"build": "gulp build",
