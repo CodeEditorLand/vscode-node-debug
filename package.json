@@ -426,17 +426,17 @@
 		"gulp/**/yargs-parser": "^5.0.0-security.0"
 	},
 	"dependencies": {
-		"glob": "7.1.6",
-		"minimatch": "3.0.4",
-		"request-light": "0.4.0",
-		"source-map": "0.6.1"
+		"glob": "10.4.2",
+		"minimatch": "9.0.4",
+		"request-light": "0.7.0",
+		"source-map": "0.7.4"
 	},
 	"devDependencies": {
-		"@types/node": "^12.7.3",
-		"del": "5.1.0",
-		"ts-loader": "~6.2.1",
-		"tsutils": "3.17.1",
-		"yargs-parser": "5.0.0-security.0"
+		"@types/node": "^20.14.8",
+		"del": "7.1.0",
+		"ts-loader": "~9.5.1",
+		"tsutils": "3.21.0",
+		"yargs-parser": "21.1.1"
 	},
 	"extensionDependencies": [
 		"ms-vscode.node-debug2"
