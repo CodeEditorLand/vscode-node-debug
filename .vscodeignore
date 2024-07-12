@@ -1,0 +1,13 @@
+node_modules
+out
+src/**/*
+testdata/**/*
+.gitignore
+.travis.yml
+.vscode/**/*
+appveyor.yml
+gulpfile.js
+package-lock.json
+CODE_OF_CONDUCT.md
+README.md
+webpack.config.js
