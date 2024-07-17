@@ -423,7 +423,7 @@
 		"onCommand:extension.node-debug.startAutoAttach"
 	],
 	"resolutions": {
-		"gulp/**/yargs-parser": "^5.0.0-security.0"
+		"gulp/**/yargs-parser": "5.0.0-security.0"
 	},
 	"dependencies": {
 		"glob": "7.1.6",
@@ -432,9 +432,9 @@
 		"source-map": "0.6.1"
 	},
 	"devDependencies": {
-		"@types/node": "^12.7.3",
+		"@types/node": "12.7.3",
 		"del": "5.1.0",
-		"ts-loader": "~6.2.1",
+		"ts-loader": "6.2.1",
 		"tsutils": "3.17.1",
 		"yargs-parser": "5.0.0-security.0"
 	},
