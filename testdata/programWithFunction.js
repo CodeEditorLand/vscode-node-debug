@@ -1,19 +1,18 @@
-
 // global function
-foo = function(n) {
+foo = function (n) {
 	return n;
-}
+};
 
-bar = function(n) {
+bar = function (n) {
 	return n;
-}
+};
 
-console.log('foo defined');
+console.log("foo defined");
 
-setInterval(function() {
+setInterval(function () {
 	foo(123);
 }, 300);
 
-setInterval(function() {
+setInterval(function () {
 	bar(123);
 }, 300);
