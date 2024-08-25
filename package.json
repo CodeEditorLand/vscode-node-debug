@@ -427,7 +427,7 @@
 	},
 	"description": "%extension.description%",
 	"devDependencies": {
-		"@types/node": "22.4.0",
+		"@types/node": "22.5.0",
 		"del": "7.1.0",
 		"ts-loader": "9.5.1",
 		"tsutils": "3.21.0",
