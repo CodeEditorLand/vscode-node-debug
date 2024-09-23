@@ -420,18 +420,18 @@
 		}
 	},
 	"dependencies": {
-		"glob": "7.1.6",
-		"minimatch": "3.0.4",
-		"request-light": "0.4.0",
-		"source-map": "0.6.1"
+		"glob": "11.0.0",
+		"minimatch": "10.0.1",
+		"request-light": "0.8.0",
+		"source-map": "0.7.4"
 	},
 	"description": "%extension.description%",
 	"devDependencies": {
-		"@types/node": "^12.7.3",
-		"del": "5.1.0",
-		"ts-loader": "~6.2.1",
-		"tsutils": "3.17.1",
-		"yargs-parser": "5.0.0-security.0"
+		"@types/node": "22.6.0",
+		"del": "7.1.0",
+		"ts-loader": "9.5.1",
+		"tsutils": "3.21.0",
+		"yargs-parser": "21.1.1"
 	},
 	"displayName": "[Deprecated] Node Debug (legacy)",
 	"extensionDependencies": [
@@ -441,7 +441,7 @@
 	"main": "./dist/extension.js",
 	"name": "node-debug",
 	"resolutions": {
-		"gulp/**/yargs-parser": "^5.0.0-security.0"
+		"gulp/**/yargs-parser": "5.0.0-security.0"
 	},
 	"scripts": {
 		"build": "gulp build",
