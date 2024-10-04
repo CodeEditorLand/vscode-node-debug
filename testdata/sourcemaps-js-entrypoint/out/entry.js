@@ -1,2 +1,1 @@
-var entry = require('./classes.js');
-
+var entry = require("./classes.js");
