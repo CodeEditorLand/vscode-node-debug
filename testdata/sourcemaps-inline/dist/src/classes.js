@@ -25,4 +25,4 @@ var Bar = (function (_super) {
 var bar = new Bar('John2');
 console.log(bar.getName()); // John Doe
 
-//# sourceMappingURL=../the maps/classes.js.map
+//# sourceMappingURL=../../maps/src/classes.js.map
