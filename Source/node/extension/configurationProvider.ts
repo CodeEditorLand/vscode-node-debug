@@ -15,8 +15,10 @@ import { detectDebugType } from "./protocolDetection";
 import { Logger, mkdirP, writeToConsole } from "./utilities";
 
 const DEBUG_SETTINGS = "debug.node";
+
 const SHOW_USE_WSL_IS_DEPRECATED_WARNING_SETTING =
 	"showUseWslIsDeprecatedWarning";
+
 const DEFAULT_JS_PATTERNS: ReadonlyArray<string> = [
 	"*.js",
 	"*.es6",
@@ -212,6 +214,7 @@ export class NodeConfigurationProvider
 
 		// determine which protocol to use after all variables have been substituted (including command variables for process picker)
 		const debugType = await determineDebugType(config, this._logger);
+
 		if (debugType) {
 			config.type = debugType;
 		}
@@ -223,9 +226,11 @@ export class NodeConfigurationProvider
 	private getJavaScriptPatterns() {
 		const associations =
 			vscode.workspace.getConfiguration("files.associations");
+
 		const extension = vscode.extensions.getExtension<{}>(
 			"ms-vscode.node-debug",
 		);
+
 		if (!extension) {
 			throw new Error("Expected to be able to load extension data");
 		}
@@ -234,6 +239,7 @@ export class NodeConfigurationProvider
 			extension.packageJSON.contributes.breakpoints.map(
 				(b) => b.language,
 			);
+
 		return Object.keys(associations)
 			.filter(
 				(pattern) =>
@@ -280,6 +286,7 @@ export class NodeConfigurationProvider
 									false,
 									vscode.ConfigurationTarget.Global,
 								);
+
 							break;
 					}
 				});
@@ -292,16 +299,19 @@ export class NodeConfigurationProvider
 	 */
 	private async nvmSupport(config: vscode.DebugConfiguration): Promise<void> {
 		let bin: string | undefined = undefined;
+
 		let versionManagerName: string | undefined = undefined;
 
 		// first try the Node Version Switcher 'nvs'
 		let nvsHome = process.env["NVS_HOME"];
+
 		if (!nvsHome) {
 			// NVS_HOME is not always set. Probe for 'nvs' directory instead
 			const nvsDir =
 				process.platform === "win32"
 					? join(process.env["LOCALAPPDATA"] || "", "nvs")
 					: join(process.env["HOME"] || "", ".nvs");
+
 			if (fs.existsSync(nvsDir)) {
 				nvsHome = nvsDir;
 			}
@@ -313,6 +323,7 @@ export class NodeConfigurationProvider
 		if (nvsFormat || nvsHome) {
 			if (nvsHome) {
 				bin = join(nvsHome, remoteName, semanticVersion, arch);
+
 				if (process.platform !== "win32") {
 					bin = join(bin, "bin");
 				}
@@ -331,6 +342,7 @@ export class NodeConfigurationProvider
 			// now try the Node Version Manager 'nvm'
 			if (process.platform === "win32") {
 				const nvmHome = process.env["NVM_HOME"];
+
 				if (!nvmHome) {
 					throw new Error(
 						localize(
@@ -344,9 +356,11 @@ export class NodeConfigurationProvider
 			} else {
 				// macOS and linux
 				let nvmHome = process.env["NVM_DIR"];
+
 				if (!nvmHome) {
 					// if NVM_DIR is not set. Probe for '.nvm' directory instead
 					const nvmDir = join(process.env["HOME"] || "", ".nvm");
+
 					if (fs.existsSync(nvmDir)) {
 						nvmHome = nvmDir;
 					}
@@ -411,6 +425,7 @@ function createLaunchConfigFromContext(
 	}
 
 	const pkg = loadJSON(folder, "package.json");
+
 	if (pkg && pkg.name === "mern-starter") {
 		if (resolve) {
 			writeToConsole(
@@ -429,11 +444,13 @@ function createLaunchConfigFromContext(
 		configureMern(config);
 	} else {
 		let program: string | undefined;
+
 		let useSourceMaps = false;
 
 		if (pkg) {
 			// try to find a value for 'program' by analysing package.json
 			program = guessProgramFromPackage(folder, pkg, resolve);
+
 			if (program && resolve) {
 				writeToConsole(
 					localize(
@@ -447,8 +464,10 @@ function createLaunchConfigFromContext(
 		if (!program) {
 			// try to use file open in editor
 			const editor = vscode.window.activeTextEditor;
+
 			if (editor) {
 				const languageId = editor.document.languageId;
+
 				if (
 					languageId === "javascript" ||
 					isTranspiledLanguage(languageId)
@@ -456,11 +475,13 @@ function createLaunchConfigFromContext(
 					const wf = vscode.workspace.getWorkspaceFolder(
 						editor.document.uri,
 					);
+
 					if (wf && wf === folder) {
 						program = relative(
 							wf.uri.fsPath || "/",
 							editor.document.uri.fsPath || "/",
 						);
+
 						if (program && !isAbsolute(program)) {
 							program = join("${workspaceFolder}", program);
 						}
@@ -496,15 +517,19 @@ function createLaunchConfigFromContext(
 			}
 
 			let dir = "";
+
 			const tsConfig = loadJSON(folder, "tsconfig.json");
+
 			if (
 				tsConfig &&
 				tsConfig.compilerOptions &&
 				tsConfig.compilerOptions.outDir
 			) {
 				const outDir = <string>tsConfig.compilerOptions.outDir;
+
 				if (!isAbsolute(outDir)) {
 					dir = outDir;
+
 					if (dir.indexOf("./") === 0) {
 						dir = dir.substr(2);
 					}
@@ -528,7 +553,9 @@ function loadJSON(
 	if (folder) {
 		try {
 			const path = join(folder.uri.fsPath, file);
+
 			const content = fs.readFileSync(path, "utf8");
+
 			return JSON.parse(content);
 		} catch (error) {
 			// silently ignore
@@ -577,6 +604,7 @@ function guessProgramFromPackage(
 
 		if (program) {
 			let path: string | undefined;
+
 			if (isAbsolute(program)) {
 				path = program;
 			} else {
@@ -621,13 +649,17 @@ function nvsStandardArchName(arch) {
 		case "x86":
 		case "ia32":
 			return "x86";
+
 		case "64":
 		case "x64":
 		case "amd64":
 			return "x64";
+
 		case "arm":
 			const arm_version = (process.config.variables as any).arm_version;
+
 			return arm_version ? "armv" + arm_version + "l" : "arm";
+
 		default:
 			return arch;
 	}
@@ -642,13 +674,17 @@ function parseVersionString(versionString) {
 		/^(([\w-]+)\/)?(v?(\d+(\.\d+(\.\d+)?)?))(\/((x86)|(32)|((x)?64)|(arm\w*)|(ppc\w*)))?$/i;
 
 	const match = versionRegex.exec(versionString);
+
 	if (!match) {
 		throw new Error("Invalid version string: " + versionString);
 	}
 
 	const nvsFormat = !!(match[2] || match[8]);
+
 	const remoteName = match[2] || "node";
+
 	const semanticVersion = match[4] || "";
+
 	const arch = nvsStandardArchName(match[8] || process.arch);
 
 	return { nvsFormat, remoteName, semanticVersion, arch };

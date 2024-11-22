@@ -32,6 +32,7 @@ export class Cluster {
 
 	static startSession(session: vscode.DebugSession) {
 		const cluster = this.clusters.get(session.name);
+
 		if (cluster) {
 			cluster.startWatching(session);
 		}
@@ -39,6 +40,7 @@ export class Cluster {
 
 	static stopSession(session: vscode.DebugSession) {
 		const cluster = this.clusters.get(session.name);
+
 		if (cluster) {
 			cluster.stopWatching();
 			this.clusters.delete(session.name);
@@ -61,6 +63,7 @@ export class Cluster {
 				// only attach to new child processes
 				if (!this._subProcesses.has(pid)) {
 					this._subProcesses.add(pid);
+
 					const name = localize(
 						"child.process.with.pid.label",
 						"Child process {0}",
@@ -101,6 +104,7 @@ function pollProcesses(
 		//const start = Date.now();
 		findChildProcesses(rootPid, cb).then((_) => {
 			//console.log(`duration: ${Date.now() - start}`);
+
 			setTimeout((_) => {
 				if (!stopped) {
 					poll();
@@ -121,6 +125,7 @@ function findChildProcesses(
 	function walker(node: ProcessTreeNode) {
 		if (node.pid !== rootPid) {
 			let { protocol } = analyseArguments(node.args);
+
 			if (protocol) {
 				cb(node.pid, node.command, node.args);
 			}

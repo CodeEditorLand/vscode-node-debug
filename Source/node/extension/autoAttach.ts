@@ -17,6 +17,7 @@ const localize = nls.loadMessageBundle();
 const POLL_INTERVAL = 1000;
 
 const pids: Promise<number>[] = [];
+
 let autoAttacher: vscode.Disposable | undefined;
 
 export function getPidFromSession(
@@ -79,6 +80,7 @@ export function initializeAutoAttach(context: vscode.ExtensionContext) {
 						true,
 						(pid, cmdPath, args) => {
 							const cmdName = basename(cmdPath, ".exe");
+
 							if (cmdName === "node") {
 								const name = localize(
 									"process.with.pid.label",
@@ -171,6 +173,7 @@ export function attachToProcess(
 			}
 
 			let { usePort, protocol, port } = analyseArguments(args);
+
 			if (usePort) {
 				config.processId = `${protocol}${port}`;
 			} else {
@@ -200,6 +203,7 @@ function pollProcesses(
 		//const start = Date.now();
 		findChildProcesses(rootPid, inTerminal, cb).then((_) => {
 			//console.log(`duration: ${Date.now() - start}`);
+
 			setTimeout((_) => {
 				if (!stopped) {
 					poll();
@@ -228,6 +232,7 @@ function findChildProcesses(
 		}
 
 		let { protocol } = analyseArguments(node.args);
+
 		if (terminal && protocol) {
 			cb(node.pid, node.command, node.args);
 		}
@@ -240,6 +245,7 @@ function findChildProcesses(
 	return getProcessTree(rootPid).then((tree) => {
 		if (tree) {
 			const terminals = vscode.window.terminals;
+
 			if (terminals.length > 0) {
 				Promise.all(
 					terminals.map((terminal) => terminal.processId),

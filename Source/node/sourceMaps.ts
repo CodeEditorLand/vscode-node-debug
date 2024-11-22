@@ -93,6 +93,7 @@ export class SourceMaps implements ISourceMaps {
 		this._session = session;
 
 		generatedCodeGlobs = generatedCodeGlobs || [];
+
 		if (generatedCodeDirectory) {
 			generatedCodeGlobs.push(generatedCodeDirectory + "/**/*.js"); // backward compatibility: turn old outDir into a glob pattern
 		}
@@ -153,6 +154,7 @@ export class SourceMaps implements ISourceMaps {
 							column,
 							bias,
 						);
+
 						if (mr && mr.line !== null && mr.column !== null) {
 							return {
 								path: map.generatedPath(),
@@ -185,6 +187,7 @@ export class SourceMaps implements ISourceMaps {
 						column,
 						Bias.GREATEST_LOWER_BOUND,
 					);
+
 					if (!mr) {
 						mr = map.originalPositionFor(
 							line,
@@ -225,6 +228,7 @@ export class SourceMaps implements ISourceMaps {
 						column,
 						Bias.GREATEST_LOWER_BOUND,
 					);
+
 					if (!mr) {
 						mr = map.originalPositionFor(
 							line,
@@ -285,7 +289,9 @@ export class SourceMaps implements ISourceMaps {
 
 		// try to find in cache by source path
 		const pathToSourceKey = PathUtils.pathNormalize(pathToSource);
+
 		const map = this._sourceToGeneratedMaps.get(pathToSourceKey);
+
 		if (map) {
 			return Promise.resolve(map);
 		}
@@ -296,11 +302,14 @@ export class SourceMaps implements ISourceMaps {
 			.then((map) => {
 				// heuristic: try to find the generated code side by side to the source
 				const ext = Path.extname(pathToSource);
+
 				if (ext !== ".js") {
 					// use heuristic: change extension to ".js" and find a map for it
 					const pos = pathToSource.lastIndexOf(".");
+
 					if (pos >= 0) {
 						pathToGenerated = pathToSource.substr(0, pos) + ".js";
+
 						return this._findGeneratedToSourceMapping(
 							pathToGenerated,
 						);
@@ -314,8 +323,10 @@ export class SourceMaps implements ISourceMaps {
 					// we know that the plugin has an "out" directory next to the "src" directory
 					// TODO: get rid of this and use glob patterns instead
 					let srcSegment = Path.sep + "src" + Path.sep;
+
 					if (pathToGenerated.indexOf(srcSegment) >= 0) {
 						const outSegment = Path.sep + "out" + Path.sep;
+
 						return this._findGeneratedToSourceMapping(
 							pathToGenerated.replace(srcSegment, outSegment),
 						);
@@ -346,7 +357,9 @@ export class SourceMaps implements ISourceMaps {
 		}
 
 		const pathToGeneratedKey = PathUtils.pathNormalize(pathToGenerated);
+
 		const map = this._generatedToSourceMaps.get(pathToGeneratedKey);
+
 		if (map) {
 			return Promise.resolve(map);
 		}
@@ -360,6 +373,7 @@ export class SourceMaps implements ISourceMaps {
 
 				// heuristic: try to find map file side-by-side to the generated source
 				let map_path = pathToGenerated + ".map";
+
 				if (FS.existsSync(map_path)) {
 					return this._getSourceMap(
 						URI.file(map_path),
@@ -405,6 +419,7 @@ export class SourceMaps implements ISourceMaps {
 		pathToGenerated: string,
 	): URI | null {
 		const lines = contents.split("\n");
+
 		for (
 			let l = lines.length - 1;
 			l >= Math.max(lines.length - 10, 0);
@@ -412,18 +427,23 @@ export class SourceMaps implements ISourceMaps {
 		) {
 			// only search for url in the last 10 lines
 			const line = lines[l].trim();
+
 			const matches = SourceMaps.SOURCE_MAPPING_MATCHER.exec(line);
+
 			if (matches && matches.length === 2) {
 				let uri = matches[1].trim();
+
 				if (pathToGenerated) {
 					this._log(
 						`_findSourceMapUrl: source map url found at end of generated file '${pathToGenerated}'`,
 					);
+
 					return URI.parse(uri, Path.dirname(pathToGenerated));
 				} else {
 					this._log(
 						`_findSourceMapUrl: source map url found at end of generated content`,
 					);
+
 					return URI.parse(uri);
 				}
 			}
@@ -446,7 +466,9 @@ export class SourceMaps implements ISourceMaps {
 		const hash = CRYPTO.createHash("sha256")
 			.update(uri.uri())
 			.digest("hex");
+
 		let promise = this._sourceMapCache.get(hash);
+
 		if (!promise) {
 			try {
 				promise = this._loadSourceMap(uri, pathToGenerated, hash);
@@ -455,6 +477,7 @@ export class SourceMaps implements ISourceMaps {
 				this._log(
 					`_loadSourceMap: loading source map '${uri.uri()}' failed with exception: ${err}`,
 				);
+
 				return Promise.resolve(null);
 			}
 		}
@@ -470,6 +493,7 @@ export class SourceMaps implements ISourceMaps {
 		return SourceMap.newSourceMap(map_path, pathToGenerated, content).then(
 			(sm) => {
 				this._registerSourceMap(sm);
+
 				return sm;
 			},
 		);
@@ -485,6 +509,7 @@ export class SourceMaps implements ISourceMaps {
 	): Promise<SourceMap> {
 		if (uri.isFile()) {
 			const map_path = uri.filePath();
+
 			return this._readFile(map_path).then((content) => {
 				return this.registerSourceMap(
 					map_path,
@@ -496,10 +521,13 @@ export class SourceMaps implements ISourceMaps {
 
 		if (uri.isData()) {
 			const data = uri.data();
+
 			if (data) {
 				try {
 					const buffer = new Buffer(data, "base64");
+
 					const json = buffer.toString();
+
 					if (json) {
 						return this.registerSourceMap(
 							pathToGenerated,
@@ -521,6 +549,7 @@ export class SourceMaps implements ISourceMaps {
 				"node-debug",
 				"sm-cache",
 			);
+
 			const path = Path.join(cache_path, hash);
 
 			return Promise.resolve(FS.existsSync(path)).then((exists) => {
@@ -571,7 +600,9 @@ export class SourceMaps implements ISourceMaps {
 		if (map) {
 			const genPath = PathUtils.pathNormalize(map.generatedPath());
 			this._generatedToSourceMaps.set(genPath, map);
+
 			const sourcePaths = map.allSourcePaths();
+
 			for (let path of sourcePaths) {
 				const key = PathUtils.pathNormalize(path);
 				this._sourceToGeneratedMaps.set(key, map);
@@ -627,6 +658,7 @@ export class SourceMap {
 		json: string,
 	): Promise<SourceMap> {
 		const sm = new SourceMap();
+
 		return sm.init(mapPath, generatedPath, json);
 	}
 
@@ -643,6 +675,7 @@ export class SourceMap {
 
 		if (!generatedPath) {
 			let file = sm.file;
+
 			if (!PathUtils.isAbsolutePath(file)) {
 				generatedPath = PathUtils.makePathAbsolute(mapPath, file);
 			}
@@ -682,6 +715,7 @@ export class SourceMap {
 		// source-map@0.7.3
 		return new SM.SourceMapConsumer(sm).then(x => {
 			this._smc = x;
+
 			return this;
 		}).catch(err => {
 			// ignore exception and leave _smc undefined
@@ -699,6 +733,7 @@ export class SourceMap {
 
 	public allSourcePaths(): string[] {
 		const paths = new Array<string>();
+
 		for (let name of this._sources) {
 			if (!util.isAbsolute(name)) {
 				name = util.join(this._sourceRoot, name);
@@ -729,9 +764,11 @@ export class SourceMap {
 		};
 
 		const mp = this._smc.originalPositionFor(needle);
+
 		if (mp.source) {
 			// if source map has inlined source, return it
 			const src = this._smc.sourceContentFor(mp.source);
+
 			if (src) {
 				(<any>mp).content = src;
 			}
@@ -760,6 +797,7 @@ export class SourceMap {
 
 		// make sure that we use an entry from the "sources" array that matches the passed absolute path
 		const source = this.findSource(absPath);
+
 		if (source) {
 			const needle = {
 				source: source,
@@ -800,9 +838,11 @@ export class SourceMap {
 	 */
 	private unfixPath(path: string): string {
 		const prefix = "file://";
+
 		if (path.indexOf(prefix) === 0) {
 			path = path.substr(prefix.length);
 			path = decodeURI(path);
+
 			if (/^\/[a-zA-Z]\:\//.test(path)) {
 				path = path.substr(1); // remove additional '/'
 			}
@@ -816,12 +856,14 @@ export class SourceMap {
 	 */
 	private findSource(absPath: string): string | null {
 		absPath = PathUtils.pathNormalize(absPath);
+
 		for (let name of this._sources) {
 			if (!util.isAbsolute(name)) {
 				name = util.join(this._sourceRoot, name);
 			}
 			let path = this.absolutePath(name);
 			path = PathUtils.pathNormalize(path);
+
 			if (absPath === path) {
 				return name;
 			}

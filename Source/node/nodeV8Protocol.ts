@@ -33,6 +33,7 @@ export class NodeV8Response extends NodeV8Message {
 		super("response");
 		this.request_seq = request.seq;
 		this.command = request.command;
+
 		if (message) {
 			this.success = false;
 			this.message = message;
@@ -49,6 +50,7 @@ export class NodeV8Event extends NodeV8Message {
 	public constructor(event: string, body?: any) {
 		super("event");
 		this.event = event;
+
 		if (body) {
 			this.body = body;
 		}
@@ -85,6 +87,7 @@ export interface V8Object extends V8Simple {
 	vscode_namedCnt?: number;
 
 	className?: string;
+
 	constructorFunction?: V8Ref;
 	protoObject?: V8Ref;
 	prototypeObject?: V8Ref;
@@ -190,6 +193,7 @@ export interface V8ListBreakpointsResponse extends NodeV8Response {
 export interface V8SetBreakpointResponse extends NodeV8Response {
 	body: {
 		type: string;
+
 		breakpoint: number;
 		script_id: number;
 		actual_locations: {
@@ -468,6 +472,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 		const request: any = {
 			command: command,
 		};
+
 		if (args && Object.keys(args).length > 0) {
 			request.arguments = args;
 		}
@@ -506,7 +511,9 @@ export class NodeV8Protocol extends EE.EventEmitter {
 
 			const timer = setTimeout(() => {
 				clearTimeout(timer);
+
 				const clb = this._pendingRequests.get(request.seq);
+
 				if (clb) {
 					this._pendingRequests.delete(request.seq);
 					clb(
@@ -538,12 +545,15 @@ export class NodeV8Protocol extends EE.EventEmitter {
 	private send(typ: NodeV8MessageType, message: NodeV8Message): void {
 		message.type = typ;
 		message.seq = this._sequence++;
+
 		const json = JSON.stringify(message);
+
 		const data =
 			"Content-Length: " +
 			Buffer.byteLength(json, "utf8") +
 			"\r\n\r\n" +
 			json;
+
 		if (this._writableStream) {
 			this._writableStream.write(data);
 		}
@@ -554,7 +564,9 @@ export class NodeV8Protocol extends EE.EventEmitter {
 			case "event":
 				const e = <NodeV8Event>message;
 				this.emitEvent(e);
+
 				break;
+
 			case "response":
 				if (this._unresponsiveMode) {
 					this._unresponsiveMode = false;
@@ -563,15 +575,19 @@ export class NodeV8Protocol extends EE.EventEmitter {
 					);
 				}
 				const response = <NodeV8Response>message;
+
 				const clb = this._pendingRequests.get(response.request_seq);
+
 				if (clb) {
 					this._pendingRequests.delete(response.request_seq);
+
 					if (this._responseHook) {
 						this._responseHook(response);
 					}
 					clb(response);
 				}
 				break;
+
 			default:
 				break;
 		}
@@ -592,6 +608,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 					);
 					this._rawData = this._rawData.slice(this._contentLength);
 					this._contentLength = -1;
+
 					if (message.length > 0) {
 						try {
 							this.internalDispatch(JSON.parse(message));
@@ -601,22 +618,29 @@ export class NodeV8Protocol extends EE.EventEmitter {
 				}
 			} else {
 				const idx = this._rawData.indexOf(NodeV8Protocol.TWO_CRLF);
+
 				if (idx !== -1) {
 					const header = this._rawData.toString("utf8", 0, idx);
+
 					const lines = header.split("\r\n");
+
 					for (let i = 0; i < lines.length; i++) {
 						const pair = lines[i].split(/: +/);
+
 						switch (pair[0]) {
 							case "V8-Version":
 								const match0 = pair[1].match(/(\d+(?:\.\d+)+)/);
+
 								if (match0 && match0.length === 2) {
 									this.v8Version = match0[1];
 								}
 								break;
+
 							case "Embedding-Host":
 								const match = pair[1].match(
 									/node\sv(\d+)\.(\d+)\.(\d+)/,
 								);
+
 								if (match && match.length === 4) {
 									this.embeddedHostVersion =
 										(parseInt(match[1]) * 100 +
@@ -629,18 +653,22 @@ export class NodeV8Protocol extends EE.EventEmitter {
 								const match1 = pair[1].match(
 									/node\s(v\d+\.\d+\.\d+)/,
 								);
+
 								if (match1 && match1.length === 2) {
 									this.hostVersion = match1[1];
 								}
 								break;
+
 							case "Content-Length":
 								this._contentLength = +pair[1];
+
 								break;
 						}
 					}
 					this._rawData = this._rawData.slice(
 						idx + NodeV8Protocol.TWO_CRLF.length,
 					);
+
 					continue; // try to handle a complete message
 				}
 			}

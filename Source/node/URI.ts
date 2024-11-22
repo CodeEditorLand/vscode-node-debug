@@ -71,6 +71,7 @@ export class URI {
 
 		const u = new URI();
 		u._uri = path;
+
 		try {
 			u._u = URL.parse(path);
 		} catch (e) {
@@ -91,6 +92,7 @@ export class URI {
 		) {
 			const u = new URI();
 			u._uri = uri;
+
 			try {
 				u._u = URL.parse(uri);
 			} catch (e) {
@@ -132,6 +134,7 @@ export class URI {
 
 	data(): string | null {
 		const pos = this._uri.lastIndexOf(",");
+
 		if (pos > 0) {
 			return this._uri.substr(pos + 1);
 		}

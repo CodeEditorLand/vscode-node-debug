@@ -37,6 +37,7 @@ export function detectDebugType(
 					? "legacy-node2"
 					: "legacy-node",
 			);
+
 		default:
 			// should not happen
 			break;
@@ -53,8 +54,11 @@ function detectProtocolForAttach(
 	logger: Logger,
 ): Promise<string | undefined> {
 	const address = config.address || "127.0.0.1";
+
 	const port = config.port;
+
 	const socket = new net.Socket();
+
 	const cleanup = () => {
 		try {
 			socket.write(
@@ -70,8 +74,11 @@ function detectProtocolForAttach(
 		(resolve, reject) => {
 			socket.once("data", (data) => {
 				let reason: string | undefined = undefined;
+
 				let protocol: string;
+
 				const dataStr = data.toString();
+
 				if (dataStr.indexOf("WebSockets request was expected") >= 0) {
 					logger.debug(
 						"Debugging with inspector protocol because it was detected.",
@@ -118,6 +125,7 @@ function detectProtocolForAttach(
 		})
 		.then((result) => {
 			cleanup();
+
 			if (result.reason) {
 				writeToConsole(result.reason);
 				logger.debug(result.reason);
@@ -135,10 +143,12 @@ function detectProtocolForLaunch(
 		logger.debug(
 			"Debugging with inspector protocol because a runtime executable is set.",
 		);
+
 		return "inspector";
 	} else {
 		// only determine version if no runtimeExecutable is set (and 'node' on PATH is used)
 		let env = process.env;
+
 		if (config.env) {
 			env = extendObject(extendObject({}, process.env), config.env);
 		}
@@ -146,11 +156,14 @@ function detectProtocolForLaunch(
 			shell: true,
 			env: env,
 		});
+
 		const semVerString = result.stdout
 			? result.stdout.toString()
 			: undefined;
+
 		if (semVerString) {
 			config.__nodeVersion = semVerString.trim();
+
 			if (
 				semVerStringToInt(config.__nodeVersion) >=
 				InspectorMinNodeVersionLaunch
@@ -158,6 +171,7 @@ function detectProtocolForLaunch(
 				logger.debug(
 					`Debugging with inspector protocol because Node.js ${config.__nodeVersion} was detected.`,
 				);
+
 				return "inspector";
 			} else {
 				writeToConsole(
@@ -170,12 +184,14 @@ function detectProtocolForLaunch(
 				logger.debug(
 					`Debugging with legacy protocol because Node.js ${config.__nodeVersion} was detected.`,
 				);
+
 				return "legacy";
 			}
 		} else {
 			logger.debug(
 				"Debugging with inspector protocol because Node.js version could not be determined.",
 			);
+
 			return "inspector";
 		}
 	}
@@ -186,6 +202,7 @@ function detectProtocolForLaunch(
  */
 function semVerStringToInt(vString: string): number {
 	const match = vString.match(/v(\d+)\.(\d+)\.(\d+)/);
+
 	if (match && match.length === 4) {
 		return (
 			(parseInt(match[1]) * 100 + parseInt(match[2])) * 100 +
@@ -232,6 +249,7 @@ function getOpenPortsForPidWin(pid: number): Promise<number[]> {
 				})
 				.map((lineParts) => {
 					const address = lineParts[1];
+
 					return parseInt(address.split(":")[1]);
 				});
 
@@ -260,10 +278,12 @@ function getPidListeningOnPortUnix(port: number): Promise<number> {
 		cp.exec(`lsof -i:${port} -F p`, (err, stdout) => {
 			if (err || !stdout) {
 				resolve(-1);
+
 				return;
 			}
 
 			const pidMatch = stdout.match(/p(\d+)/);
+
 			if (pidMatch && pidMatch[1]) {
 				resolve(Number(pidMatch[1]));
 			} else {
@@ -286,6 +306,7 @@ export interface DebugArguments {
 export function analyseArguments(args: string): DebugArguments {
 	const DEBUG_FLAGS_PATTERN =
 		/--(inspect|debug)(-brk)?(=((\[[0-9a-fA-F:]*\]|[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|[a-zA-Z0-9\.]*):)?(\d+))?/;
+
 	const DEBUG_PORT_PATTERN = /--(inspect|debug)-port=(\d+)/;
 
 	const result: DebugArguments = {
@@ -295,9 +316,11 @@ export function analyseArguments(args: string): DebugArguments {
 
 	// match --debug, --debug=1234, --debug-brk, debug-brk=1234, --inspect, --inspect=1234, --inspect-brk, --inspect-brk=1234
 	let matches = DEBUG_FLAGS_PATTERN.exec(args);
+
 	if (matches && matches.length >= 2) {
 		// attach via port
 		result.usePort = true;
+
 		if (matches.length >= 6 && matches[5]) {
 			result.address = matches[5];
 		}
@@ -309,6 +332,7 @@ export function analyseArguments(args: string): DebugArguments {
 
 	// a debug-port=1234 or --inspect-port=1234 overrides the port
 	matches = DEBUG_PORT_PATTERN.exec(args);
+
 	if (matches && matches.length === 3) {
 		// override port
 		result.port = parseInt(matches[2]);

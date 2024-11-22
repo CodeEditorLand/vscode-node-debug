@@ -58,6 +58,7 @@ export async function resolveProcessId(
 		/^(inspector|legacy)?([0-9]+)(inspector|legacy)?([0-9]+)?$/.exec(
 			processId,
 		);
+
 	if (matches && matches.length === 5) {
 		if (matches[2] && matches[3] && matches[4]) {
 			// process id and protocol and port
@@ -85,6 +86,7 @@ export async function resolveProcessId(
 					config,
 					pid,
 				);
+
 				if (debugType) {
 					// processID is handled, so turn this config into a normal port attach configuration
 					delete config.processId;
@@ -135,6 +137,7 @@ export function pickProcess(ports?): Promise<string | null> {
 				matchOnDescription: true,
 				matchOnDetail: true,
 			};
+
 			return vscode.window
 				.showQuickPick(items, options)
 				.then((item) => (item ? item.pidOrPort : null));
@@ -181,7 +184,9 @@ function listProcesses(ports: boolean): Promise<ProcessItem[]> {
 			const executable_name = basename(command, ".exe");
 
 			let port = -1;
+
 			let protocol: string | undefined = "";
+
 			let usePort = true;
 
 			if (ports) {
@@ -192,6 +197,7 @@ function listProcesses(ports: boolean): Promise<ProcessItem[]> {
 			}
 
 			let description = "";
+
 			let pidOrPort = "";
 
 			if (usePort) {
@@ -281,6 +287,7 @@ function determineDebugTypeForPidInDebugMode(
 	pid: number,
 ): Promise<string | null> {
 	let debugProtocolP: Promise<string | null>;
+
 	if (config.port === INSPECTOR_PORT_DEFAULT) {
 		debugProtocolP = Promise.resolve("inspector");
 	} else if (config.port === LEGACY_PORT_DEFAULT) {

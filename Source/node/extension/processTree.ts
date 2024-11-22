@@ -39,8 +39,10 @@ export async function getProcessTree(
 	}
 
 	const values = map.values();
+
 	for (const p of values) {
 		const parent = map.get(p.ppid);
+
 		if (parent && parent !== p) {
 			if (!parent.children) {
 				parent.children = [];
@@ -69,6 +71,7 @@ export function getProcesses(
 		let unfinished = ""; // unfinished last line of chunk
 		return (data: string | Buffer) => {
 			const lines = data.toString().split(/\r?\n/);
+
 			const finishedLines = lines.slice(0, lines.length - 1);
 			finishedLines[0] = unfinished + finishedLines[0]; // complete previous unfinished line
 			unfinished = lines[lines.length - 1]; // remember unfinished last line of this chunk for next round
@@ -102,21 +105,29 @@ export function getProcesses(
 				"data",
 				lines((line) => {
 					let matches = CMD_PAT.exec(line.trim());
+
 					if (matches && matches.length === 5) {
 						const pid = Number(matches[4]);
+
 						const ppid = Number(matches[3]);
+
 						const date = Number(matches[2]);
+
 						let args = matches[1].trim();
+
 						if (!isNaN(pid) && !isNaN(ppid) && args) {
 							let command = args;
+
 							if (args[0] === '"') {
 								const end = args.indexOf('"', 1);
+
 								if (end > 0) {
 									command = args.substr(1, end - 1);
 									args = args.substr(end + 2);
 								}
 							} else {
 								const end = args.indexOf(" ");
+
 								if (end > 0) {
 									command = args.substr(0, end);
 									args = args.substr(end + 1);
@@ -142,8 +153,11 @@ export function getProcesses(
 				"data",
 				lines((line) => {
 					const pid = Number(line.substr(0, 5));
+
 					const ppid = Number(line.substr(6, 5));
+
 					const command = line.substr(12, 256).trim();
+
 					const args = line.substr(269 + command.length);
 
 					if (!isNaN(pid) && !isNaN(ppid)) {
@@ -165,13 +179,18 @@ export function getProcesses(
 				lines((line) => {
 					// the following substr arguments must match the column width specified for the "ps" command above
 					const pid = Number(line.substr(0, 6));
+
 					const ppid = Number(line.substr(7, 6));
+
 					let command = line.substr(14, 20).trim();
+
 					let args = line.substr(35);
 
 					let pos = args.indexOf(command);
+
 					if (pos >= 0) {
 						pos = pos + command.length;
+
 						while (pos < args.length) {
 							if (args[pos] === " ") {
 								break;
@@ -196,6 +215,7 @@ export function getProcesses(
 		proc.stderr.setEncoding("utf8");
 		proc.stderr.on("data", (data) => {
 			const e = data.toString();
+
 			if (e.indexOf("screen size is bogus") >= 0) {
 				// ignore this error silently; see https://github.com/microsoft/vscode/issues/75932
 			} else {
