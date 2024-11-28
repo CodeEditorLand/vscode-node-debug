@@ -14,6 +14,7 @@ import { extendObject, Logger, writeToConsole } from "./utilities";
 const localize = nls.loadMessageBundle();
 
 export const INSPECTOR_PORT_DEFAULT = 9229;
+
 export const LEGACY_PORT_DEFAULT = 5858;
 
 // For launch, use inspector protocol starting with v8 because it's stable after that version.
