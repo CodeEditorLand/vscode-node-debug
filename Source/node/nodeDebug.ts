@@ -74,6 +74,7 @@ export interface VariableContainer {
 		start: number | undefined,
 		count: number | undefined,
 	): Promise<Variable[]>;
+
 	SetValue(
 		session: NodeDebugSession,
 		name: string,
@@ -115,7 +116,9 @@ export class Expander implements VariableContainer {
 
 export class PropertyContainer implements VariableContainer {
 	private _evalName: string | undefined;
+
 	private _object: V8Object;
+
 	private _this: V8Object | undefined;
 
 	public constructor(
@@ -124,7 +127,9 @@ export class PropertyContainer implements VariableContainer {
 		ths?: V8Object,
 	) {
 		this._evalName = evalName;
+
 		this._object = obj;
+
 		this._this = ths;
 	}
 
@@ -145,6 +150,7 @@ export class PropertyContainer implements VariableContainer {
 								if (variable) {
 									variables.push(variable);
 								}
+
 								return variables;
 							});
 					} else {
@@ -172,6 +178,7 @@ export class PropertyContainer implements VariableContainer {
 								if (variable) {
 									variables.push(variable);
 								}
+
 								return variables;
 							});
 					} else {
@@ -192,10 +199,12 @@ export class PropertyContainer implements VariableContainer {
 
 export class SetMapContainer implements VariableContainer {
 	private _evalName: string | undefined;
+
 	private _object: V8Object;
 
 	public constructor(evalName: string | undefined, obj: V8Object) {
 		this._evalName = evalName;
+
 		this._object = obj;
 	}
 
@@ -230,14 +239,20 @@ export class SetMapContainer implements VariableContainer {
 
 export class ScopeContainer implements VariableContainer {
 	private _frame: number;
+
 	private _scope: number;
+
 	private _object: V8Object;
+
 	private _this: V8Object | undefined;
 
 	public constructor(scope: V8Scope, obj: V8Object, ths?: V8Object) {
 		this._frame = scope.frameIndex;
+
 		this._scope = scope.index;
+
 		this._object = obj;
+
 		this._this = ths;
 	}
 
@@ -257,6 +272,7 @@ export class ScopeContainer implements VariableContainer {
 							if (variable) {
 								variables.push(variable);
 							}
+
 							return variables;
 						});
 				} else {
@@ -285,6 +301,7 @@ type ReasonType =
 
 class Script {
 	contents: string;
+
 	sourceMap: SourceMap;
 
 	constructor(script: V8Script) {
@@ -296,12 +313,19 @@ type HitterFunction = (hitCount: number) => boolean;
 
 class InternalSourceBreakpoint {
 	line: number;
+
 	orgLine: number;
+
 	column: number;
+
 	orgColumn: number;
+
 	condition: string | undefined;
+
 	hitCount: number;
+
 	hitter: HitterFunction | undefined;
+
 	verificationMessage: string;
 
 	constructor(
@@ -312,6 +336,7 @@ class InternalSourceBreakpoint {
 		hitter?: HitterFunction,
 	) {
 		this.line = this.orgLine = line;
+
 		this.column = this.orgColumn = column;
 
 		if (logMessage) {
@@ -325,6 +350,7 @@ class InternalSourceBreakpoint {
 		}
 
 		this.hitCount = 0;
+
 		this.hitter = hitter;
 	}
 }
@@ -338,6 +364,7 @@ class SourceSource {
 
 	constructor(sid: number, content?: string) {
 		this.scriptId = sid;
+
 		this.source = content;
 	}
 }
@@ -442,34 +469,50 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private static MAX_JSON_LENGTH = 500000; // max size of stringified object to return in 'evaluate' request
 
 	private static NODE_TERMINATION_POLL_INTERVAL = 3000;
+
 	private static ATTACH_TIMEOUT = 10000;
+
 	private static RUNINTERMINAL_TIMEOUT = 5000;
 
 	private static PREVIEW_PROPERTIES = 3; // maximum number of properties to show in object/array preview
 	private static PREVIEW_MAX_STRING_LENGTH = 50; // truncate long strings for object/array preview
 
 	private static NODE = "node";
+
 	private static DUMMY_THREAD_ID = 1;
+
 	private static DUMMY_THREAD_NAME = "Node";
+
 	private static FIRST_LINE_OFFSET = 62;
+
 	private static PROTO = "__proto__";
+
 	private static DEBUG_INJECTION = "debugInjection.js";
+
 	private static NODE_INTERNALS = "<node_internals>";
+
 	private static NODE_INTERNALS_PREFIX = /^<node_internals>[/\\]/;
+
 	private static NODE_INTERNALS_VM = /^<node_internals>[/\\]VM([0-9]+)/;
+
 	private static JS_EXTENSIONS = [".js", ".es6", ".jsx", ".mjs"];
 
 	private static NODE_SHEBANG_MATCHER = new RegExp("#! */usr/bin/env +node");
+
 	private static LONG_STRING_MATCHER = /\.\.\. \(length: [0-9]+\)$/;
+
 	private static HITCOUNT_MATCHER = /(>|>=|=|==|<|<=|%)?\s*([0-9]+)/;
+
 	private static PROPERTY_NAME_MATCHER = /^[$_\w][$_\w0-9]*$/;
 
 	// tracing
 	private _trace: string[] | undefined;
+
 	private _traceAll = false;
 
 	// options
 	private _tryToInjectExtension = true;
+
 	private _skipRejects = false; // do not stop on rejected promises
 	private _maxVariablesPerScope = 100; // only load this many variables for a scope
 	private _smartStep = false; // try to automatically step over uninteresting source
@@ -480,54 +523,86 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 	// session state
 	private _node: NodeV8Protocol;
+
 	private _attachSuccessful: boolean;
+
 	private _processId: number = -1; // pid of the program launched
 	private _nodeProcessId: number = -1; // pid of the node runtime
 	private _isWSL = false;
+
 	private _functionBreakpoints = new Array<number>(); // node function breakpoint ids
 	private _scripts = new Map<number, Promise<Script>>(); // script cache
 	private _files = new Map<string, Promise<string>>(); // file cache
 	private _scriptId2Handle = new Map<number, number>();
+
 	private _inlinedContentHandle = new Map<string, number>();
+
 	private _modifiedSources = new Set<string>(); // track edited files
 	private _hitCounts = new Map<number, InternalSourceBreakpoint>(); // breakpoint ID -> ignore count
 
 	// session configurations
 	private _noDebug = false;
+
 	private _attachMode = false;
+
 	private _localRoot: string | undefined;
+
 	private _remoteRoot: string | undefined;
+
 	private _restartMode = false;
+
 	private _port: number | undefined;
+
 	private _sourceMaps: ISourceMaps;
+
 	private _console: ConsoleType = "internalConsole";
+
 	private _stopOnEntry: boolean;
+
 	private _stepBack = false;
 
 	// state valid between stop events
 	public _variableHandles = new Handles<VariableContainer>();
+
 	private _frameHandles = new Handles<V8Frame>();
+
 	private _sourceHandles = new Handles<SourceSource>();
+
 	private _refCache = new Map<number, V8Handle>();
 
 	// internal state
 	private _isTerminated: boolean;
+
 	private _inShutdown: boolean;
+
 	private _pollForNodeProcess = false;
+
 	private _exception: V8ExceptionEventBody | undefined;
+
 	private _restartFramePending: boolean;
+
 	private _stoppedReason: string;
+
 	private _nodeInjectionAvailable = false;
+
 	private _needContinue: boolean;
+
 	private _needBreakpointEvent: boolean;
+
 	private _needDebuggerEvent: boolean;
+
 	private _gotEntryEvent: boolean;
+
 	private _gotDebuggerEvent = false;
+
 	private _entryPath: string;
+
 	private _entryLine: number; // entry line in *.js file (not in the source file)
 	private _entryColumn: number; // entry column in *.js file (not in the source file)
 	private _smartStepCount = 0;
+
 	private _catchRejects = false;
+
 	private _disableSkipFiles = false;
 
 	public constructor() {
@@ -536,6 +611,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		// this debugger uses zero-based lines and columns which is the default
 		// so the following two calls are not really necessary.
 		this.setDebuggerLinesStartAt1(false);
+
 		this.setDebuggerColumnsStartAt1(false);
 
 		this._node = new NodeV8Protocol((response) => {
@@ -546,6 +622,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				for (let r of response.refs) {
 					this._cache(r.handle, r);
 				}
+
 				if (this._refCache.size !== oldSize) {
 					this.log(
 						"rc",
@@ -557,17 +634,20 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		this._node.on("break", (event: NodeV8Event) => {
 			this._stopped("break");
+
 			this._handleNodeBreakEvent(<V8BreakEventBody>event.body);
 		});
 
 		this._node.on("exception", (event: NodeV8Event) => {
 			this._stopped("exception");
+
 			this._handleNodeExceptionEvent(<V8ExceptionEventBody>event.body);
 		});
 
 		/*
 		this._node.on('beforeCompile', (event: NodeV8Event) => {
 			//this.outLine(`beforeCompile ${this._scriptToPath(event.body.script)}`);
+
 			this.sendEvent(new Event('customScriptLoad', { script: this._scriptToPath(event.body.script) }));
 		});
 		*/
@@ -621,6 +701,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 					return;
 				}
+
 				description = localize(
 					"exception.paused.promise.rejection",
 					"Paused on Promise Rejection",
@@ -643,6 +724,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		// send event
 		this._exception = eventBody;
+
 		this._sendStoppedEvent(
 			"exception",
 			description,
@@ -695,6 +777,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 			if (source.indexOf("debugger") === 0) {
 				this._gotDebuggerEvent = true;
+
 				this._sendStoppedEvent("debugger_statement");
 
 				return;
@@ -706,6 +789,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		if (this._restartFramePending) {
 			this._restartFramePending = false;
+
 			reason = "frame_entry";
 		}
 
@@ -715,6 +799,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this._skipGenerated(eventBody).then((r) => {
 					if (r) {
 						this._node.command("continue", { stepaction: "in" });
+
 						this._smartStepCount++;
 					} else {
 						this._sendStoppedEvent(<ReasonType>reason);
@@ -755,6 +840,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				"ss",
 				`_handleNodeBreakEvent: ${this._smartStepCount} steps skipped`,
 			);
+
 			this._smartStepCount = 0;
 		}
 
@@ -863,6 +949,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			if (PathUtils.multiGlobMatches(this._skipFiles, localPath)) {
 				return Promise.resolve(true);
 			}
+
 			return Promise.resolve(false);
 		}
 
@@ -892,13 +979,16 @@ export class NodeDebugSession extends LoggingDebugSession {
 			if (!this._skipFiles) {
 				this._skipFiles = new Array<string>();
 			}
+
 			this._skipFiles.push("!" + resource);
 		} else {
 			if (!this._skipFiles) {
 				this._skipFiles = new Array<string>();
 			}
+
 			this._skipFiles.push(resource);
 		}
+
 		this.sendResponse(response);
 	}
 
@@ -918,6 +1008,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		} else {
 			name = `VM${script.id}`;
 		}
+
 		return `${NodeDebugSession.NODE_INTERNALS}/${name}`;
 	}
 
@@ -937,6 +1028,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		} else {
 			path = `${NodeDebugSession.NODE_INTERNALS}/VM${script.id}`;
 		}
+
 		const src = new Source(
 			Path.basename(path),
 			path,
@@ -950,9 +1042,11 @@ export class NodeDebugSession extends LoggingDebugSession {
 						(s) => new Source(Path.basename(s), s),
 					);
 				}
+
 				return src;
 			});
 		}
+
 		return Promise.resolve(src);
 	}
 
@@ -966,6 +1060,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (result && result.length >= 2) {
 			return +result[1];
 		}
+
 		return path.replace(NodeDebugSession.NODE_INTERNALS_PREFIX, "");
 	}
 
@@ -974,11 +1069,17 @@ export class NodeDebugSession extends LoggingDebugSession {
 	 */
 	private _stopped(reason: string): void {
 		this._stoppedReason = reason;
+
 		this.log("la", `_stopped: got ${reason} event from node`);
+
 		this._exception = undefined;
+
 		this._variableHandles.reset();
+
 		this._frameHandles.reset();
+
 		this._refCache = new Map<number, V8Object>();
+
 		this.log("rc", `_stopped: new ref cache`);
 	}
 
@@ -1151,6 +1252,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				return;
 			}
+
 			this._isWSL = true;
 		}
 
@@ -1176,6 +1278,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 					return;
 				}
+
 				runtimeExecutable = re;
 			} else {
 				const re = PathUtils.findExecutable(
@@ -1192,6 +1295,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 					return;
 				}
+
 				runtimeExecutable = re;
 			}
 		} else {
@@ -1211,6 +1315,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				return;
 			}
+
 			runtimeExecutable = re;
 		}
 
@@ -1230,6 +1335,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				return;
 			}
+
 			if (!FS.existsSync(programPath)) {
 				if (!FS.existsSync(programPath + ".js")) {
 					this.sendNotExistErrorResponse(
@@ -1240,8 +1346,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 					return;
 				}
+
 				programPath += ".js";
 			}
+
 			programPath = Path.normalize(programPath);
 
 			if (
@@ -1280,6 +1388,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 									"sm",
 									`launchRequest: program '${programPath}' seems to be the source; launch the generated file '${generatedPath}' instead`,
 								);
+
 								programPath = generatedPath;
 							} else {
 								this.log(
@@ -1287,6 +1396,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 									`launchRequest: program '${programPath}' seems to be the generated file`,
 								);
 							}
+
 							this.launchRequest2(
 								response,
 								args,
@@ -1315,6 +1425,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 					return;
 				}
+
 				this._sourceMaps
 					.MapPathFromSource(programPath)
 					.then((generatedPath) => {
@@ -1344,13 +1455,17 @@ export class NodeDebugSession extends LoggingDebugSession {
 									{ path: programPath },
 								);
 							}
+
 							return;
 						}
+
 						this.log(
 							"sm",
 							`launchRequest: program '${programPath}' seems to be the source; launch the generated file '${generatedPath}' instead`,
 						);
+
 						programPath = generatedPath;
+
 						this.launchRequest2(
 							response,
 							args,
@@ -1397,6 +1512,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				return;
 			}
+
 			if (!FS.existsSync(workingDirectory)) {
 				this.sendNotExistErrorResponse(
 					response,
@@ -1414,6 +1530,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			// should not happen
 			// if no working dir given, we use the direct folder of the executable
 			workingDirectory = Path.dirname(programPath);
+
 			program = Path.basename(programPath);
 		}
 
@@ -1436,6 +1553,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				// use a random port
 				port = await findport();
+
 				launchArgs.push(`--debug-brk=${port}`);
 			}
 		}
@@ -1443,6 +1561,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (program) {
 			launchArgs.push(program);
 		}
+
 		launchArgs = launchArgs.concat(programArgs);
 
 		const address = args.address;
@@ -1459,6 +1578,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				);
 
 				const env = {};
+
 				buffer.split("\n").forEach((line) => {
 					const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
 
@@ -1476,10 +1596,12 @@ export class NodeDebugSession extends LoggingDebugSession {
 							) {
 								value = value.replace(/\\n/gm, "\n");
 							}
+
 							env[key] = value.replace(/(^['"]|['"]$)/g, "");
 						}
 					}
 				});
+
 				envVars = PathUtils.extendObject(env, args.env); // launch config env vars overwrite .env vars
 			} catch (e) {
 				this.sendErrorResponse(
@@ -1510,6 +1632,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		// if using subsystem linux, we use local/remote mapping (if not configured by user)
 		if (args.useWSL && !args.localRoot && !args.remoteRoot) {
 			this._localRoot = wslLaunchArgs.localRoot;
+
 			this._remoteRoot = wslLaunchArgs.remoteRoot;
 		}
 
@@ -1566,6 +1689,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							),
 							{ _error: runResponse.message },
 						);
+
 						this._terminated(
 							"terminal error: " + runResponse.message,
 						);
@@ -1607,6 +1731,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				for (const a of wslLaunchArgs.args) {
 					if (a.indexOf(" ") > 0) {
 						args.push(`"${a}"`);
+
 						foundArgWithSpace = true;
 					} else {
 						args.push(a);
@@ -1615,6 +1740,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				if (foundArgWithSpace) {
 					wslLaunchArgs.args = args;
+
 					wslLaunchArgs.executable = `"${wslLaunchArgs.executable}"`;
 					(<any>options).shell = true;
 				}
@@ -1625,6 +1751,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				wslLaunchArgs.args,
 				options,
 			);
+
 			nodeProcess.on("error", (error) => {
 				// tslint:disable-next-line:no-bitwise
 				this.sendErrorResponse(
@@ -1638,11 +1765,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 					{ _error: error.message },
 					ErrorDestination.Telemetry | ErrorDestination.User,
 				);
+
 				this._terminated(`failed to launch target (${error})`);
 			});
+
 			nodeProcess.on("exit", () => {
 				this._terminated("target exited");
 			});
+
 			nodeProcess.on("close", (code) => {
 				this._terminated("target closed");
 			});
@@ -1669,8 +1799,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 			} else {
 				cli += a;
 			}
+
 			cli += " ";
 		}
+
 		this.outLine(cli);
 	}
 
@@ -1680,6 +1812,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.sendEvent(new OutputEvent(data.toString(), "stdout"));
 			});
 		}
+
 		if (process.stderr) {
 			process.stderr.on("data", (data: string) => {
 				this.sendEvent(new OutputEvent(data.toString(), "stderr"));
@@ -1698,16 +1831,20 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		if (typeof args.trace === "boolean") {
 			this._trace = args.trace ? ["all"] : undefined;
+
 			this._traceAll = args.trace;
 		} else if (typeof args.trace === "string") {
 			this._trace = args.trace.split(",");
+
 			this._traceAll = this._trace.indexOf("all") >= 0;
 
 			if (this._trace.indexOf("dap") >= 0) {
 				logger.setup(Logger.LogLevel.Verbose, /*logToFile=*/ false);
+
 				stopLogging = false;
 			}
 		}
+
 		if (stopLogging) {
 			logger.setup(Logger.LogLevel.Stop, false);
 		}
@@ -1748,6 +1885,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				return true;
 			}
+
 			if (!FS.existsSync(localRoot)) {
 				this.sendNotExistErrorResponse(
 					response,
@@ -1757,14 +1895,17 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				return true;
 			}
+
 			this._localRoot = localRoot;
 		}
+
 		this._remoteRoot = args.remoteRoot;
 
 		if (!this._sourceMaps) {
 			if (args.sourceMaps === undefined) {
 				args.sourceMaps = true;
 			}
+
 			if (typeof args.sourceMaps === "boolean" && args.sourceMaps) {
 				const generatedCodeDirectory = args.outDir;
 
@@ -1778,6 +1919,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 						return true;
 					}
+
 					if (!FS.existsSync(generatedCodeDirectory)) {
 						this.sendNotExistErrorResponse(
 							response,
@@ -1788,6 +1930,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						return true;
 					}
 				}
+
 				this._sourceMaps = new SourceMaps(
 					this,
 					generatedCodeDirectory,
@@ -1827,6 +1970,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (!port) {
 			port = 5858;
 		}
+
 		this._port = port;
 
 		let address: string;
@@ -1846,11 +1990,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 		let connected = false;
 
 		const socket = new Net.Socket();
+
 		socket.connect(port, address);
 
 		socket.on("connect", (err) => {
 			this.log("la", "_attach: connected");
+
 			connected = true;
+
 			this._node.startDispatch(<NodeJS.ReadableStream>socket, socket);
 
 			this._isRunning()
@@ -1866,6 +2013,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 								const v = this._node.embeddedHostVersion; // x.y.z version represented as (x*100+y)*100+z
 								if (!this._node.v8Version && v >= 70000) {
 									this._stepBack = true;
+
 									this.sendEvent(
 										new CapabilitiesEvent({
 											supportsStepBack: true,
@@ -1875,6 +2023,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							}
 
 							this.sendResponse(response);
+
 							this._startInitialize(!running);
 						});
 					}, 10);
@@ -1885,6 +2034,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		});
 
 		const endTime = new Date().getTime() + timeout;
+
 		socket.on("error", (err) => {
 			if (connected) {
 				// since we are connected this error is fatal
@@ -1909,6 +2059,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					if (now < endTime) {
 						setTimeout(() => {
 							this.log("la", "_attach: retry socket.connect");
+
 							socket.connect(port, address);
 						}, 200); // retry after 200 ms
 					} else {
@@ -1974,10 +2125,12 @@ export class NodeDebugSession extends LoggingDebugSession {
 			(resp: V8EvaluateResponse) => {
 				if (resp.success && resp.body.value !== undefined) {
 					this._nodeProcessId = +resp.body.value;
+
 					this.log(
 						"la",
 						`__initialize: got process id ${this._nodeProcessId} from node`,
 					);
+
 					this.logNodeVersion();
 				} else {
 					if (resp.message.indexOf("process is not defined") >= 0) {
@@ -1985,6 +2138,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							"la",
 							"__initialize: process not defined error; got no pid",
 						);
+
 						resp.success = true; // continue and try to get process.pid later
 					}
 				}
@@ -2033,6 +2187,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							version,
 						}),
 					);
+
 					this.log(
 						"la",
 						`_initialize: target node version: ${version}`,
@@ -2052,6 +2207,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				}
 			} catch (e) {
 				clearInterval(id);
+
 				this._terminated("node process kill exception");
 			}
 		}, NodeDebugSession.NODE_TERMINATION_POLL_INTERVAL);
@@ -2089,6 +2245,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 								"la",
 								`_injectDebuggerExtensions: code injection successful`,
 							);
+
 							this._nodeInjectionAvailable = true;
 
 							return true;
@@ -2106,6 +2263,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				}
 			}
 		}
+
 		return Promise.resolve(true);
 	}
 
@@ -2146,12 +2304,15 @@ export class NodeDebugSession extends LoggingDebugSession {
 					(resp: V8EvaluateResponse) => {
 						if (resp.success && resp.body.value !== undefined) {
 							this._nodeProcessId = +resp.body.value;
+
 							this.log(
 								"la",
 								`_initialize: got process id ${this._nodeProcessId} from node (2nd try)`,
 							);
+
 							this.logNodeVersion();
 						}
+
 						this._startInitialize2(stopped);
 					},
 				);
@@ -2171,6 +2332,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					const s = <V8Script>(
 						this._getValueFromCache(resp.body.script)
 					);
+
 					this._rememberEntryLocation(
 						s.name,
 						resp.body.line,
@@ -2186,6 +2348,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 	private _startInitialize2(stopped: boolean): void {
 		// request UI to send breakpoints
 		this.log("la", "_startInitialize2: fire initialized event");
+
 		this.sendEvent(new InitializedEvent());
 
 		this._attachSuccessful = true;
@@ -2206,6 +2369,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (this._stopOnEntry) {
 			// user has requested 'stop on entry' so send out a stop-on-entry event
 			this.log("la", "_startInitialize2: fire stop-on-entry event");
+
 			this._sendStoppedEvent("entry");
 		} else {
 			// since we are stopped but UI doesn't know about this, remember that we later do the right thing in configurationDoneRequest()
@@ -2216,6 +2380,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					"la",
 					`_startInitialize2: remember to do a 'Continue' later`,
 				);
+
 				this._needContinue = true;
 			}
 		}
@@ -2232,6 +2397,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		}
 
 		this.log("la", "terminateRequest: send response");
+
 		this.sendResponse(response);
 	}
 
@@ -2242,6 +2408,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		this.shutdown();
 
 		this.log("la", "disconnectRequest: send response");
+
 		this.sendResponse(response);
 	}
 
@@ -2267,6 +2434,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.log("la", "shutdown: kill debugee and sub-processes");
 
 				let pid = this._processId;
+
 				this._processId = -1;
 
 				if (this._isWSL) {
@@ -2293,8 +2461,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 					// backward compatibilty
 					if (this._nodeProcessId > 0) {
 						pid = this._nodeProcessId;
+
 						this._nodeProcessId = -1;
 					}
+
 					if (pid > 0) {
 						NodeDebugSession.killTree(pid);
 					}
@@ -2333,12 +2503,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 						if (op === "=") {
 							op = "==";
 						}
+
 						const value = result[2];
 
 						const expr =
 							op === "%"
 								? `return (hitcnt % ${value}) === 0;`
 								: `return hitcnt ${op} ${value};`;
+
 						hitter = <HitterFunction>Function("hitcnt", expr);
 					} else {
 						// error
@@ -2387,6 +2559,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					args.sourceModified
 				) {
 					keepUnverified = true;
+
 					this._modifiedSources.add(sourcePath);
 				}
 			}
@@ -2500,6 +2673,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				if (this._sourceMaps) {
 					return this._sourceMaps.MapPathFromSource(path);
 				}
+
 				return generated;
 			})
 			.then((generated) => {
@@ -2512,6 +2686,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						"bp",
 						`_mapSourceAndUpdateBreakpoints: source and generated are same -> ignore sourcemap`,
 					);
+
 					generated = "";
 				}
 
@@ -2542,6 +2717,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 									lb.line = -1;
 								} else {
 									lb.line = mapresult.line;
+
 									lb.column = mapresult.column;
 								}
 							} else {
@@ -2549,11 +2725,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 									"sm",
 									`_mapSourceAndUpdateBreakpoints: src: '${path}' ${lb.line}:${lb.column} -> gen: couldn't be mapped; breakpoint ignored`,
 								);
+
 								lb.line = -1;
 							}
 						}
 
 						path = <string>generated;
+
 						path = this._localToRemote(path);
 
 						this._updateBreakpoints(response, path, -1, lbs, true);
@@ -2601,12 +2779,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 							if (scriptId === breakpoint.script_id) {
 								toClear.push(breakpoint.number);
 							}
+
 							break;
 
 						case "scriptRegExp":
 							if (path_regexp === breakpoint.script_regexp) {
 								toClear.push(breakpoint.number);
 							}
+
 							break;
 					}
 				}
@@ -2624,7 +2804,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 				response.body = {
 					breakpoints: result,
 				};
+
 				this.sendResponse(response);
+
 				this.log(
 					"bp",
 					`_updateBreakpoints: result ${JSON.stringify(result)}`,
@@ -2662,6 +2844,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (lb.line < 0) {
 			// ignore this breakpoint because it couldn't be source mapped successfully
 			const bp: DebugProtocol.Breakpoint = new Breakpoint(false);
+
 			bp.message = localize(
 				"sourcemapping.fail.message",
 				"Breakpoint ignored because generated code not found (source map problem?).",
@@ -2711,6 +2894,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				if (al.length > 0) {
 					actualLine = al[0].line;
+
 					actualColumn = this._adjustColumn(actualLine, al[0].column);
 				}
 
@@ -2742,10 +2926,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 										"sm",
 										`_setBreakpoint: bp verification gen: '${localpath}' ${actualLine}:${actualColumn} -> src: '${mapresult.path}' ${mapresult.line}:${mapresult.column}`,
 									);
+
 									actualSrcLine = mapresult.line;
+
 									actualSrcColumn = mapresult.column;
 								} else {
 									actualSrcLine = lb.orgLine;
+
 									actualSrcColumn = lb.orgColumn;
 								}
 
@@ -2760,6 +2947,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							});
 					} else {
 						actualSrcLine = lb.orgLine;
+
 						actualSrcColumn = lb.orgColumn;
 					}
 				}
@@ -2808,7 +2996,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 			if (!this._stopOnEntry && conditionMet) {
 				// we do not have to 'continue' but we have to generate a stopped event instead
 				this._needContinue = false;
+
 				this._needBreakpointEvent = true;
+
 				this.log(
 					"la",
 					"_setBreakpoint2: remember to fire a breakpoint event later",
@@ -2822,6 +3012,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				this.convertDebuggerLineToClient(actualSrcLine),
 				this.convertDebuggerColumnToClient(actualSrcColumn),
 			);
+
 			bp.message = ibp.verificationMessage;
 
 			return bp;
@@ -2866,6 +3057,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			const u = escPath.substring(0, 1).toUpperCase();
 
 			const l = u.toLowerCase();
+
 			escPath = "[" + l + u + "]" + escPath.substring(1);
 		}
 
@@ -2916,6 +3108,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				response.body = {
 					breakpoints: results,
 				};
+
 				this.sendResponse(response);
 
 				this.log(
@@ -2986,13 +3179,16 @@ export class NodeDebugSession extends LoggingDebugSession {
 		let all = false;
 
 		let uncaught = false;
+
 		this._catchRejects = false;
 
 		const filters = args.filters;
 
 		if (filters) {
 			all = filters.indexOf("all") >= 0;
+
 			uncaught = filters.indexOf("uncaught") >= 0;
+
 			this._catchRejects = filters.indexOf("rejects") >= 0;
 		}
 
@@ -3030,21 +3226,27 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (this._needContinue) {
 			// we do not break on entry
 			this._needContinue = false;
+
 			info = "do a 'Continue'";
+
 			this._node.command("continue");
 		}
 
 		if (this._needBreakpointEvent) {
 			// we have to break on entry
 			this._needBreakpointEvent = false;
+
 			info = "fire breakpoint event";
+
 			this._sendBreakpointStoppedEvent(1); // we know the ID of the entry point breakpoint
 		}
 
 		if (this._needDebuggerEvent) {
 			// we have to break on entry
 			this._needDebuggerEvent = false;
+
 			info = "fire debugger statement event";
+
 			this._sendStoppedEvent("debugger_statement");
 		}
 
@@ -3072,6 +3274,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					}
 				}
 			}
+
 			if (threads.length === 0) {
 				// always return at least one thread
 				let name = NodeDebugSession.DUMMY_THREAD_NAME;
@@ -3083,13 +3286,16 @@ export class NodeDebugSession extends LoggingDebugSession {
 				} else if (this._node.hostVersion) {
 					name = `${name} (${this._node.hostVersion})`;
 				}
+
 				threads.push(
 					new Thread(NodeDebugSession.DUMMY_THREAD_ID, name),
 				);
 			}
+
 			response.body = {
 				threads: threads,
 			};
+
 			this.sendResponse(response);
 		});
 	}
@@ -3130,11 +3336,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 			"va",
 			`stackTraceRequest: backtrace ${startFrame} ${maxLevels}`,
 		);
+
 		this._node
 			.backtrace(backtraceArgs)
 			.then((response) => {
 				if (response.body.totalFrames > 0 || response.body.frames) {
 					const frames = response.body.frames;
+
 					totalFrames = response.body.totalFrames;
 
 					return Promise.all<StackFrame>(
@@ -3149,6 +3357,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					stackFrames: stackframes,
 					totalFrames: totalFrames,
 				};
+
 				this.sendResponse(response);
 			})
 			.catch((error) => {
@@ -3271,6 +3480,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 						// if we end up here, 'name' is not a path and is an internal module
 						path = this._scriptToPath(script_val);
+
 						origin = localize(
 							"origin.core.module",
 							"read-only core module",
@@ -3289,11 +3499,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 					// if a function is dynamically created from a string, its script has no name.
 					path = this._scriptToPath(script_val);
+
 					name = Path.basename(path);
 				}
 
 				// source not found locally -> prepare to stream source content from node backend.
 				const sourceHandle = this._getScriptIdHandle(script_val.id);
+
 				src = this._createSource(
 					false,
 					name,
@@ -3322,14 +3534,18 @@ export class NodeDebugSession extends LoggingDebugSession {
 				"source.skipFiles",
 				"skipped due to 'skipFiles'",
 			);
+
 			deemphasize = true;
+
 			origin = origin ? `${origin} (${skipFiles})` : skipFiles;
 		} else if (!hasSource && this._smartStep && this._sourceMaps) {
 			const smartStep = localize(
 				"source.smartstep",
 				"skipped due to 'smartStep'",
 			);
+
 			deemphasize = true;
+
 			origin = origin ? `${origin} (${smartStep})` : smartStep;
 		}
 
@@ -3401,6 +3617,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							const sourceHandle = this._getInlinedContentHandle(
 								mapresult.content,
 							);
+
 							origin = localize(
 								"origin.inlined.source.map",
 								"read-only inlined content from source map",
@@ -3463,8 +3680,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		if (!handle) {
 			handle = this._sourceHandles.create(new SourceSource(0, content));
+
 			this._inlinedContentHandle.set(content, handle);
 		}
+
 		return handle;
 	}
 
@@ -3499,6 +3718,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				} else {
 					// we use the script's content streamed from node
 					const sourceHandle = this._getScriptIdHandle(script_id);
+
 					src = this._createSource(
 						false,
 						name,
@@ -3508,6 +3728,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						{ remotePath: remotePath },
 					); // assume it is a remote path
 				}
+
 				return this._createStackFrameFromSource(
 					frame,
 					src,
@@ -3523,8 +3744,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		if (!handle) {
 			handle = this._sourceHandles.create(new SourceSource(scriptId));
+
 			this._scriptId2Handle.set(scriptId, handle);
 		}
+
 		return handle;
 	}
 
@@ -3563,9 +3786,11 @@ export class NodeDebugSession extends LoggingDebugSession {
 				func_name = func_val.name;
 			}
 		}
+
 		if (!func_name || func_name.length === 0) {
 			func_name = localize("anonymous.function", "(anonymous function)");
 		}
+
 		return func_name;
 	}
 
@@ -3598,6 +3823,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 							// normalize EOL sequences
 							contents = contents.replace(/\r\n/g, "\n");
+
 							fileContents = fileContents.replace(/\r\n/g, "\n");
 
 							// remove an optional shebang
@@ -3612,8 +3838,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 							return false;
 						});
 				}
+
 				return true;
 			}
+
 			return false;
 		});
 	}
@@ -3725,6 +3953,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 			return;
 		}
+
 		const frameIx = frame.index;
 
 		const frameThis = <V8Object>this._getValueFromCache(frame.receiver);
@@ -3738,10 +3967,12 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 		if (this._nodeInjectionAvailable) {
 			cmd = "vscode_scopes";
+
 			scopesArgs.maxLocals = this._maxVariablesPerScope;
 		}
 
 		this.log("va", `scopesRequest: scope ${frameIx}`);
+
 		this._node
 			.command2(cmd, scopesArgs)
 			.then((scopesResponse: V8ScopeResponse) => {
@@ -3767,6 +3998,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 									"number"
 							) {
 								expensive = true;
+
 								scopeName = localize(
 									{
 										key: "scope.local.with.count",
@@ -3802,6 +4034,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 										expensive,
 									);
 								}
+
 								return new Scope(scopeName, 0);
 							})
 							.catch((error) => {
@@ -3822,6 +4055,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						},
 						"Exception",
 					);
+
 					scopes.unshift(
 						new Scope(
 							scopeName,
@@ -3838,11 +4072,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 				response.body = {
 					scopes: scopes,
 				};
+
 				this.sendResponse(response);
 			})
 			.catch((error) => {
 				// in case of error return empty scopes array
 				response.body = { scopes: [] };
+
 				this.sendResponse(response);
 			});
 	}
@@ -3867,9 +4103,11 @@ export class NodeDebugSession extends LoggingDebugSession {
 				.Expand(this, filter, args.start, args.count)
 				.then((variables) => {
 					variables.sort(NodeDebugSession.compareVariableNames);
+
 					response.body = {
 						variables: variables,
 					};
+
 					this.sendResponse(response);
 				})
 				.catch((err) => {
@@ -3877,6 +4115,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					response.body = {
 						variables: [],
 					};
+
 					this.sendResponse(response);
 				});
 		} else {
@@ -3884,6 +4123,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			response.body = {
 				variables: [],
 			};
+
 			this.sendResponse(response);
 		}
 	}
@@ -3968,6 +4208,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							if (!isIndex(name)) {
 								selectedProperties.push(property);
 							}
+
 							break;
 
 						case "indexed":
@@ -3978,6 +4219,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 									selectedProperties.push(property);
 								}
 							}
+
 							break;
 					}
 				}
@@ -3991,6 +4233,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			if (h > 0) {
 				// only add if not an internal debugger object
 				(<any>obj.protoObject).name = NodeDebugSession.PROTO;
+
 				selectedProperties.push(<V8Property>obj.protoObject);
 			}
 		}
@@ -4020,6 +4263,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 					if (isIndex(property.name)) {
 						const ix = +property.name;
+
 						name = `${start + ix}`;
 					} else {
 						name = <string>property.name;
@@ -4122,6 +4366,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						this._createVar(en, name, simple.value.toString()),
 					);
 				}
+
 				break;
 
 			case "boolean":
@@ -4134,6 +4379,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						),
 					); // node returns these boolean values capitalized
 				}
+
 				break;
 
 			case "set":
@@ -4185,6 +4431,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 								),
 							);
 						}
+
 						break;
 
 					case "Generator":
@@ -4221,6 +4468,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 										if (preview) {
 											value = `${value} ${preview}`;
 										}
+
 										return this._createVar(
 											en,
 											name,
@@ -4258,10 +4506,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 									text = text.substring(0, pos) + "{ … }";
 								}
 							}
+
 							value = text;
 						}
+
 						break;
 				}
+
 				return Promise.resolve(
 					this._createVar(
 						en,
@@ -4277,6 +4528,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			default:
 				break;
 		}
+
 		return Promise.resolve(
 			this._createVar(
 				en,
@@ -4305,6 +4557,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (evalName) {
 			v.evaluateName = evalName;
 		}
+
 		return v;
 	}
 
@@ -4367,6 +4620,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						}
 					}
 				}
+
 				preview += "}";
 
 				return preview;
@@ -4425,6 +4679,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						}
 					}
 				}
+
 				preview += "]";
 
 				return preview;
@@ -4451,7 +4706,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 			if (pair.length >= 2) {
 				indexedSize = pair[0];
+
 				namedSize = pair[1];
+
 				arraySize = indexedSize.toString();
 			}
 
@@ -4462,6 +4719,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					if (preview) {
 						v = `${v} ${preview}`;
 					}
+
 					const en = this._getEvaluateName(evalName, name);
 
 					return this._createVar(
@@ -4656,6 +4914,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						),
 					);
 				}
+
 				return variables;
 			});
 		});
@@ -4677,6 +4936,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			if (str_val.length > maxLength) {
 				str_val = str_val.substr(0, maxLength) + "…";
 			}
+
 			return Promise.resolve(
 				this._createVar(en, name, this._escapeStringValue(str_val)),
 			);
@@ -4739,6 +4999,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				.SetValue(this, name, value)
 				.then((newVar) => {
 					const v: DebugProtocol.Variable = newVar;
+
 					response.body = {
 						value: v.value,
 					};
@@ -4746,15 +5007,19 @@ export class NodeDebugSession extends LoggingDebugSession {
 					if (v.type) {
 						response.body.type = v.type;
 					}
+
 					if (v.variablesReference) {
 						response.body.variablesReference = v.variablesReference;
 					}
+
 					if (typeof v.indexedVariables === "number") {
 						response.body.indexedVariables = v.indexedVariables;
 					}
+
 					if (typeof v.namedVariables === "number") {
 						response.body.namedVariables = v.namedVariables;
 					}
+
 					this.sendResponse(response);
 				})
 				.catch((err) => {
@@ -4837,7 +5102,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 		this._node.command("suspend", null, (nodeResponse) => {
 			if (nodeResponse.success) {
 				this._stopped("pause");
+
 				this.sendResponse(response);
+
 				this._sendStoppedEvent("pause");
 			} else {
 				this._sendNodeResponse(response, nodeResponse);
@@ -4852,6 +5119,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		args: DebugProtocol.ContinueArguments,
 	): void {
 		this._disableSkipFiles = false;
+
 		this._node.command("continue", null, (nodeResponse) => {
 			this._sendNodeResponse(response, nodeResponse);
 		});
@@ -4886,6 +5154,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		args: DebugProtocol.StepOutArguments,
 	): void {
 		this._disableSkipFiles = false;
+
 		this._node.command(
 			"continue",
 			{ stepaction: "out" },
@@ -4913,6 +5182,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		args: DebugProtocol.ReverseContinueArguments,
 	): void {
 		this._disableSkipFiles = false;
+
 		this._node.command(
 			"continue",
 			{ stepaction: "reverse" },
@@ -4944,6 +5214,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				return;
 			}
+
 			restartFrameArgs.frame = frame.index;
 		}
 
@@ -4952,6 +5223,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			restartFrameArgs,
 			(restartNodeResponse) => {
 				this._restartFramePending = true;
+
 				this._node.command(
 					"continue",
 					{ stepaction: "in" },
@@ -4991,6 +5263,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 				return;
 			}
+
 			const frameIx = frame.index;
 			(<any>evalArgs).frame = frameIx;
 		} else {
@@ -5013,11 +5286,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 								};
 							} else {
 								response.success = false;
+
 								response.message = localize(
 									"eval.not.available",
 									"not available",
 								);
 							}
+
 							this.sendResponse(response);
 						},
 					);
@@ -5036,6 +5311,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						const m = resp.message
 							.substring("SyntaxError: ".length)
 							.toLowerCase();
+
 						response.message = localize(
 							"eval.invalid.expression",
 							"invalid expression: {0}",
@@ -5044,6 +5320,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					} else {
 						response.message = resp.message;
 					}
+
 					this.sendResponse(response);
 				}
 			},
@@ -5071,6 +5348,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						content: script.contents,
 						mimeType: "text/javascript",
 					};
+
 					this.sendResponse(response);
 				})
 				.catch((err) => {
@@ -5105,6 +5383,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 					content: srcSource.source,
 					mimeType: "text/javascript",
 				};
+
 				this.sendResponse(response);
 
 				return;
@@ -5119,6 +5398,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							content: srcSource.source,
 							mimeType: "text/javascript",
 						};
+
 						this.sendResponse(response);
 					})
 					.catch((err) => {
@@ -5186,6 +5466,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						return new Script(result);
 					}
 				}
+
 				throw new Error(`script ${scriptIdOrPath} not found`);
 			});
 		}
@@ -5277,6 +5558,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 										// specify a range starting with the '.' and extending to the end of the line
 										// which will be replaced by the completion proposal.
 										pi.start = dot;
+
 										pi.length = line.length - dot;
 									}
 								}
@@ -5289,12 +5571,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 					response.body = {
 						targets: items,
 					};
+
 					this.sendResponse(response);
 				})
 				.catch((err) => {
 					response.body = {
 						targets: [],
 					};
+
 					this.sendResponse(response);
 				});
 		} else {
@@ -5302,6 +5586,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				response.body = {
 					targets: [],
 				};
+
 				this.sendResponse(response);
 
 				return;
@@ -5312,6 +5597,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			if (typeof args.frameId === "number" && args.frameId > 0) {
 				frame = this._frameHandles.get(args.frameId);
 			}
+
 			if (!frame) {
 				this.sendErrorResponse(
 					response,
@@ -5329,12 +5615,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 					response.body = {
 						targets: targets,
 					};
+
 					this.sendResponse(response);
 				})
 				.catch((err) => {
 					response.body = {
 						targets: [],
 					};
+
 					this.sendResponse(response);
 				});
 		}
@@ -5370,6 +5658,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 									!set.has(property.name)
 								) {
 									set.add(property.name);
+
 									items.push({
 										label: <string>property.name,
 										type: "function",
@@ -5378,6 +5667,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 							}
 						}
 					}
+
 					return items;
 				});
 			})
@@ -5419,6 +5709,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						} else if (exception.type) {
 							response.body.exceptionId = exception.type;
 						}
+
 						if (exception.text) {
 							response.body.description = exception.text;
 						}
@@ -5440,6 +5731,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 										? undefined
 										: stack;
 								}
+
 								return undefined;
 							})
 							.catch((_) => {
@@ -5507,8 +5799,10 @@ export class NodeDebugSession extends LoggingDebugSession {
 				const sources = resp.body.map((script) =>
 					this._scriptToSource(script),
 				);
+
 				Promise.all(sources).then((result) => {
 					response.body = { sources: result };
+
 					this.sendResponse(response);
 				});
 			})
@@ -5587,6 +5881,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			"{path}",
 			"${workspaceFolder}/",
 		);
+
 		this.sendErrorResponseWithInfoLink(
 			response,
 			2008,
@@ -5755,11 +6050,13 @@ export class NodeDebugSession extends LoggingDebugSession {
 
 			return r === undefined ? null : r;
 		}
+
 		if (typeof m.handle === "number") {
 			const r = this._refCache.get(m.handle);
 
 			return r === undefined ? null : r;
 		}
+
 		return null;
 	}
 
@@ -5784,6 +6081,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			const cmd = this._nodeInjectionAvailable
 				? "vscode_lookup"
 				: "lookup";
+
 			this.log("va", `_resolveToCache: ${cmd} ${lookup.length} handles`);
 
 			return this._node
@@ -5793,6 +6091,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						const obj = resp.body[key];
 
 						const handle: number = obj.handle;
+
 						this._cache(handle, obj);
 					}
 
@@ -5837,8 +6136,11 @@ export class NodeDebugSession extends LoggingDebugSession {
 	): void {
 		if (path) {
 			this._entryPath = path;
+
 			this._entryLine = line;
+
 			this._entryColumn = this._adjustColumn(line, column);
+
 			this._gotEntryEvent = true;
 		}
 	}
@@ -5854,6 +6156,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 				column = 0;
 			}
 		}
+
 		return column;
 	}
 
@@ -5879,6 +6182,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 						return result.id;
 					}
 				}
+
 				return -1; // not found
 			})
 			.catch((err) => {
@@ -5906,7 +6210,9 @@ export class NodeDebugSession extends LoggingDebugSession {
 			const buffer = new Buffer(30);
 
 			const fd = FS.openSync(path, "r");
+
 			FS.readSync(fd, buffer, 0, buffer.length, 0);
+
 			FS.closeSync(fd);
 
 			const line = buffer.toString();
@@ -5929,12 +6235,14 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (n1 === NodeDebugSession.PROTO) {
 			return 1;
 		}
+
 		if (n2 === NodeDebugSession.PROTO) {
 			return -1;
 		}
 
 		// convert [n], [n..m] -> n
 		n1 = NodeDebugSession.extractNumber(n1);
+
 		n2 = NodeDebugSession.extractNumber(n2);
 
 		const i1 = parseInt(n1);
@@ -5948,12 +6256,15 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (isNum1 && !isNum2) {
 			return 1; // numbers after names
 		}
+
 		if (!isNum1 && isNum2) {
 			return -1; // names before numbers
 		}
+
 		if (isNum1 && isNum2) {
 			return i1 - i2;
 		}
+
 		return n1.localeCompare(n2);
 	}
 
@@ -5961,6 +6272,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 		if (s[0] === "[" && s[s.length - 1] === "]") {
 			return s.substring(1, s.length - 1);
 		}
+
 		return s;
 	}
 
@@ -5981,6 +6293,7 @@ export class NodeDebugSession extends LoggingDebugSession {
 			// on linux and OS X we kill all direct and indirect child processes as well
 			try {
 				const cmd = Path.join(__dirname, "terminateProcess.sh");
+
 				CP.spawnSync(cmd, [processId.toString()]);
 			} catch (err) {}
 		}
@@ -6026,6 +6339,7 @@ function logMessageToExpression(msg: string) {
 	if (args.length > 0) {
 		return `console.log('${format}', ${args.join(", ")})`;
 	}
+
 	return `console.log('${format}')`;
 }
 
@@ -6034,16 +6348,21 @@ function findport(): Promise<number> {
 		let port = 0;
 
 		const server = Net.createServer();
+
 		server.on("listening", (_) => {
 			const ai = server.address();
 
 			if (typeof ai === "object" && ai !== null) {
 				port = ai.port;
 			}
+
 			server.close();
 		});
+
 		server.on("close", () => c(port));
+
 		server.on("error", (err) => e(err));
+
 		server.listen(0, "127.0.0.1");
 	});
 }

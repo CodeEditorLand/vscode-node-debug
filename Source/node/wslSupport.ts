@@ -15,6 +15,7 @@ export function subsystemLinuxPresent(): boolean {
 	if (!isWindows) {
 		return false;
 	}
+
 	const sysRoot = process.env["SystemRoot"] || "C:\\WINDOWS";
 
 	const bashPath32bitApp = path.join(sysRoot, "Sysnative", "bash.exe");
@@ -32,18 +33,25 @@ function windowsPathToWSLPath(
 	if (!isWindows || !windowsPath) {
 		return undefined;
 	}
+
 	if (path.isAbsolute(windowsPath)) {
 		return `/mnt/${windowsPath.substr(0, 1).toLowerCase()}/${windowsPath.substr(3).replace(/\\/g, "/")}`;
 	}
+
 	return windowsPath.replace(/\\/g, "/");
 }
 
 export interface ILaunchArgs {
 	cwd: string;
+
 	executable: string;
+
 	args: string[];
+
 	combined: string[];
+
 	localRoot?: string;
+
 	remoteRoot?: string;
 }
 
@@ -75,6 +83,7 @@ export function createLaunchArg(
 					// workaround for issue #35249
 					element = element.replace(/\\/g, "/");
 				}
+
 				return element.indexOf(" ") > 0 ? `'${element}'` : element;
 			})
 			.join(" ");

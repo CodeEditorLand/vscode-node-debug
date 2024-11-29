@@ -12,30 +12,41 @@ type NodeV8MessageType = "request" | "response" | "event";
 
 export class NodeV8Message {
 	seq: number;
+
 	type: NodeV8MessageType;
 
 	public constructor(type: NodeV8MessageType) {
 		this.seq = 0;
+
 		this.type = type;
 	}
 }
 
 export class NodeV8Response extends NodeV8Message {
 	request_seq: number;
+
 	success: boolean;
+
 	running: boolean;
+
 	command: string;
+
 	message: string;
+
 	body: any;
+
 	refs: V8Object[];
 
 	public constructor(request: NodeV8Response, message?: string) {
 		super("response");
+
 		this.request_seq = request.seq;
+
 		this.command = request.command;
 
 		if (message) {
 			this.success = false;
+
 			this.message = message;
 		} else {
 			this.success = true;
@@ -45,10 +56,12 @@ export class NodeV8Response extends NodeV8Message {
 
 export class NodeV8Event extends NodeV8Message {
 	event: string;
+
 	body: V8EventBody;
 
 	public constructor(event: string, body?: any) {
 		super("event");
+
 		this.event = event;
 
 		if (body) {
@@ -61,6 +74,7 @@ export class NodeV8Event extends NodeV8Message {
 
 export interface V8Handle {
 	handle: number;
+
 	type:
 		| "undefined"
 		| "null"
@@ -84,13 +98,17 @@ export interface V8Simple extends V8Handle {
 
 export interface V8Object extends V8Simple {
 	vscode_indexedCnt?: number;
+
 	vscode_namedCnt?: number;
 
 	className?: string;
 
 	constructorFunction?: V8Ref;
+
 	protoObject?: V8Ref;
+
 	prototypeObject?: V8Ref;
+
 	properties?: V8Property[];
 
 	text?: string;
@@ -100,12 +118,15 @@ export interface V8Object extends V8Simple {
 
 export interface V8Function extends V8Object {
 	name?: string;
+
 	inferredName?: string;
 }
 
 export interface V8Script extends V8Handle {
 	name: string;
+
 	id: number;
+
 	source: string;
 }
 
@@ -114,6 +135,7 @@ export interface V8Ref {
 
 	// if resolved, then a value exists
 	value?: boolean | number | string;
+
 	handle?: number;
 }
 
@@ -125,17 +147,23 @@ export interface V8Frame {
 	index: number;
 
 	line: number;
+
 	column: number;
 
 	script: V8Ref;
+
 	func: V8Ref;
+
 	receiver: V8Ref;
 }
 
 export interface V8Scope {
 	type: number;
+
 	frameIndex: number;
+
 	index: number;
+
 	object: V8Ref;
 }
 
@@ -143,8 +171,11 @@ type BreakpointType = "function" | "script" | "scriptId" | "scriptRegExp";
 
 export interface V8Breakpoint {
 	type: BreakpointType;
+
 	script_id: number;
+
 	number: number;
+
 	script_regexp: string;
 }
 
@@ -153,6 +184,7 @@ export interface V8Breakpoint {
 export interface V8ScopeResponse extends NodeV8Response {
 	body: {
 		vscode_locals?: number;
+
 		scopes: V8Scope[];
 	};
 }
@@ -164,8 +196,11 @@ export interface V8EvaluateResponse extends NodeV8Response {
 export interface V8BacktraceResponse extends NodeV8Response {
 	body: {
 		fromFrame: number;
+
 		toFrame: number;
+
 		totalFrames: number;
+
 		frames: V8Frame[];
 	};
 }
@@ -195,9 +230,12 @@ export interface V8SetBreakpointResponse extends NodeV8Response {
 		type: string;
 
 		breakpoint: number;
+
 		script_id: number;
+
 		actual_locations: {
 			line: number;
+
 			column: number;
 		}[];
 	};
@@ -208,6 +246,7 @@ type ExceptionType = "all" | "uncaught";
 export interface V8SetExceptionBreakResponse extends NodeV8Response {
 	body: {
 		type: ExceptionType;
+
 		enabled: boolean;
 	};
 }
@@ -222,8 +261,11 @@ export interface V8RestartFrameResponse extends NodeV8Response {
 
 export interface V8EventBody {
 	script: V8Script;
+
 	sourceLine: number;
+
 	sourceColumn: number;
+
 	sourceLineText: string;
 }
 
@@ -233,6 +275,7 @@ export interface V8BreakEventBody extends V8EventBody {
 
 export interface V8ExceptionEventBody extends V8EventBody {
 	exception: V8Object;
+
 	uncaught: boolean;
 }
 
@@ -240,6 +283,7 @@ export interface V8ExceptionEventBody extends V8EventBody {
 
 export interface V8BacktraceArgs {
 	fromFrame: number;
+
 	toFrame: number;
 }
 
@@ -249,32 +293,46 @@ export interface V8RestartFrameArgs {
 
 export interface V8EvaluateArgs {
 	expression: string;
+
 	disable_break?: boolean;
+
 	maxStringLength?: number;
+
 	global?: boolean;
+
 	frame?: number;
+
 	additional_context?: {
 		name: string;
+
 		handle: number;
 	}[];
 }
 
 export interface V8ScriptsArgs {
 	types: number;
+
 	includeSource?: boolean;
+
 	ids?: number[];
+
 	filter?: string;
 }
 
 export interface V8SetVariableValueArgs {
 	scope: {
 		frameNumber: number;
+
 		number: number;
 	};
+
 	name: string;
+
 	newValue: {
 		type?: string;
+
 		value?: boolean | number | string;
+
 		handle?: number;
 	};
 }
@@ -287,14 +345,19 @@ export interface V8ClearBreakpointArgs {
 
 export interface V8SetBreakpointArgs {
 	type: BreakpointType;
+
 	target: number | string;
+
 	line?: number;
+
 	column?: number;
+
 	condition?: string;
 }
 
 export interface V8SetExceptionBreakArgs {
 	type: ExceptionType;
+
 	enabled?: boolean;
 }
 
@@ -302,25 +365,35 @@ export interface V8SetExceptionBreakArgs {
 
 export class NodeV8Protocol extends EE.EventEmitter {
 	private static TIMEOUT = 10000;
+
 	private static TWO_CRLF = "\r\n\r\n";
 
 	private _rawData: Buffer;
+
 	private _contentLength: number;
+
 	private _sequence: number;
+
 	private _writableStream: NodeJS.WritableStream;
+
 	private _pendingRequests = new Map<
 		number,
 		(response: NodeV8Response) => void
 	>();
+
 	private _unresponsiveMode: boolean;
+
 	private _responseHook: ((response: NodeV8Response) => void) | undefined;
 
 	public hostVersion: string | undefined;
+
 	public embeddedHostVersion: number = -1;
+
 	public v8Version: string | undefined;
 
 	public constructor(responseHook?: (response: NodeV8Response) => void) {
 		super();
+
 		this._responseHook = responseHook;
 	}
 
@@ -329,12 +402,15 @@ export class NodeV8Protocol extends EE.EventEmitter {
 		outStream: NodeJS.WritableStream,
 	): void {
 		this._sequence = 1;
+
 		this._writableStream = outStream;
 
 		inStream.on("data", (data: Buffer) => this.execute(data));
+
 		inStream.on("close", () => {
 			this.emitEvent(new NodeV8Event("close"));
 		});
+
 		inStream.on("error", (error) => {
 			this.emitEvent(new NodeV8Event("error"));
 		});
@@ -374,6 +450,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 						// some responses don't have the 'command' attribute.
 						response.command = command;
 					}
+
 					reject(response);
 				}
 			});
@@ -486,6 +563,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 					),
 				);
 			}
+
 			return;
 		}
 
@@ -501,6 +579,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 					),
 				);
 			}
+
 			return;
 		}
 
@@ -516,6 +595,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 
 				if (clb) {
 					this._pendingRequests.delete(request.seq);
+
 					clb(
 						new NodeV8Response(
 							request,
@@ -528,6 +608,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 					);
 
 					this._unresponsiveMode = true;
+
 					this.emitEvent(
 						new NodeV8Event("diagnostic", {
 							reason: `request '${command}' timed out'`,
@@ -544,6 +625,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 
 	private send(typ: NodeV8MessageType, message: NodeV8Message): void {
 		message.type = typ;
+
 		message.seq = this._sequence++;
 
 		const json = JSON.stringify(message);
@@ -563,6 +645,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 		switch (message.type) {
 			case "event":
 				const e = <NodeV8Event>message;
+
 				this.emitEvent(e);
 
 				break;
@@ -570,10 +653,12 @@ export class NodeV8Protocol extends EE.EventEmitter {
 			case "response":
 				if (this._unresponsiveMode) {
 					this._unresponsiveMode = false;
+
 					this.emitEvent(
 						new NodeV8Event("diagnostic", { reason: "responsive" }),
 					);
 				}
+
 				const response = <NodeV8Response>message;
 
 				const clb = this._pendingRequests.get(response.request_seq);
@@ -584,8 +669,10 @@ export class NodeV8Protocol extends EE.EventEmitter {
 					if (this._responseHook) {
 						this._responseHook(response);
 					}
+
 					clb(response);
 				}
+
 				break;
 
 			default:
@@ -606,7 +693,9 @@ export class NodeV8Protocol extends EE.EventEmitter {
 						0,
 						this._contentLength,
 					);
+
 					this._rawData = this._rawData.slice(this._contentLength);
+
 					this._contentLength = -1;
 
 					if (message.length > 0) {
@@ -614,6 +703,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 							this.internalDispatch(JSON.parse(message));
 						} catch (e) {}
 					}
+
 					continue; // there may be more complete messages to process
 				}
 			} else {
@@ -634,6 +724,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 								if (match0 && match0.length === 2) {
 									this.v8Version = match0[1];
 								}
+
 								break;
 
 							case "Embedding-Host":
@@ -650,6 +741,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 								} else if (pair[1] === "Electron") {
 									this.embeddedHostVersion = 60500; // TODO this needs to be detected in a smarter way by looking at the V8 version in Electron
 								}
+
 								const match1 = pair[1].match(
 									/node\s(v\d+\.\d+\.\d+)/,
 								);
@@ -657,6 +749,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 								if (match1 && match1.length === 2) {
 									this.hostVersion = match1[1];
 								}
+
 								break;
 
 							case "Content-Length":
@@ -665,6 +758,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 								break;
 						}
 					}
+
 					this._rawData = this._rawData.slice(
 						idx + NodeV8Protocol.TWO_CRLF.length,
 					);
@@ -672,6 +766,7 @@ export class NodeV8Protocol extends EE.EventEmitter {
 					continue; // try to handle a complete message
 				}
 			}
+
 			break;
 		}
 	}

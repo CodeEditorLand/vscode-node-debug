@@ -30,6 +30,7 @@ export function extendObject<T extends object>(toObject: T, fromObject: T): T {
 			toObject[key] = fromObject[key];
 		}
 	}
+
 	return toObject;
 }
 

@@ -20,6 +20,7 @@ export class Cluster {
 	static clusters = new Map<string, Cluster>();
 
 	private _poller?: vscode.Disposable;
+
 	private _subProcesses: Set<number>; // we remember all child process attached to here
 	private _childCounter: number;
 
@@ -43,6 +44,7 @@ export class Cluster {
 
 		if (cluster) {
 			cluster.stopWatching();
+
 			this.clusters.delete(session.name);
 		}
 	}
@@ -52,6 +54,7 @@ export class Cluster {
 		private _config: vscode.DebugConfiguration,
 	) {
 		this._subProcesses = new Set<number>();
+
 		this._childCounter = 1;
 	}
 
@@ -69,6 +72,7 @@ export class Cluster {
 						"Child process {0}",
 						this._childCounter++,
 					);
+
 					attachToProcess(
 						this._folder,
 						name,
@@ -85,6 +89,7 @@ export class Cluster {
 	private stopWatching() {
 		if (this._poller) {
 			this._poller.dispose();
+
 			this._poller = undefined;
 		}
 	}
@@ -102,6 +107,7 @@ function pollProcesses(
 
 	function poll() {
 		//const start = Date.now();
+
 		findChildProcesses(rootPid, cb).then((_) => {
 			//console.log(`duration: ${Date.now() - start}`);
 

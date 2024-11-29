@@ -122,6 +122,7 @@ export class NodeConfigurationProvider
 		// remove 'useWSL' on all platforms but Windows
 		if (process.platform !== "win32" && config.useWSL) {
 			this._logger.debug("useWSL attribute ignored on non-Windows OS.");
+
 			delete config.useWSL;
 		}
 
@@ -277,6 +278,7 @@ export class NodeConfigurationProvider
 					if (!selected) {
 						return;
 					}
+
 					switch (selected.id) {
 						case 1:
 							vscode.workspace
@@ -327,6 +329,7 @@ export class NodeConfigurationProvider
 				if (process.platform !== "win32") {
 					bin = join(bin, "bin");
 				}
+
 				versionManagerName = "nvs";
 			} else {
 				throw new Error(
@@ -351,7 +354,9 @@ export class NodeConfigurationProvider
 						),
 					);
 				}
+
 				bin = join(nvmHome, `v${config.runtimeVersion}`);
+
 				versionManagerName = "nvm-windows";
 			} else {
 				// macOS and linux
@@ -365,6 +370,7 @@ export class NodeConfigurationProvider
 						nvmHome = nvmDir;
 					}
 				}
+
 				if (!nvmHome) {
 					throw new Error(
 						localize(
@@ -373,6 +379,7 @@ export class NodeConfigurationProvider
 						),
 					);
 				}
+
 				bin = join(
 					nvmHome,
 					"versions",
@@ -380,6 +387,7 @@ export class NodeConfigurationProvider
 					`v${config.runtimeVersion}`,
 					"bin",
 				);
+
 				versionManagerName = "nvm";
 			}
 		}
@@ -388,6 +396,7 @@ export class NodeConfigurationProvider
 			if (!config.env) {
 				config.env = {};
 			}
+
 			if (process.platform === "win32") {
 				config.env["Path"] = `${bin};${process.env["Path"]}`;
 			} else {
@@ -441,6 +450,7 @@ function createLaunchConfigFromContext(
 				),
 			);
 		}
+
 		configureMern(config);
 	} else {
 		let program: string | undefined;
@@ -487,6 +497,7 @@ function createLaunchConfigFromContext(
 						}
 					}
 				}
+
 				useSourceMaps = isTranspiledLanguage(languageId);
 			}
 		}
@@ -533,12 +544,15 @@ function createLaunchConfigFromContext(
 					if (dir.indexOf("./") === 0) {
 						dir = dir.substr(2);
 					}
+
 					if (dir[dir.length - 1] !== "/") {
 						dir += "/";
 					}
 				}
+
 				config["preLaunchTask"] = "tsc: build - tsconfig.json";
 			}
+
 			config["outFiles"] = ["${workspaceFolder}/" + dir + "**/*.js"];
 		}
 	}
@@ -561,19 +575,26 @@ function loadJSON(
 			// silently ignore
 		}
 	}
+
 	return undefined;
 }
 
 function configureMern(config: any) {
 	config.protocol = "inspector";
+
 	config.runtimeExecutable = "nodemon";
+
 	config.program = "${workspaceFolder}/index.js";
+
 	config.restart = true;
+
 	config.env = {
 		BABEL_DISABLE_CACHE: "1",
 		NODE_ENV: "development",
 	};
+
 	config.console = "integratedTerminal";
+
 	config.internalConsoleOptions = "neverOpen";
 }
 
@@ -609,8 +630,10 @@ function guessProgramFromPackage(
 				path = program;
 			} else {
 				path = folder ? join(folder.uri.fsPath, program) : undefined;
+
 				program = join("${workspaceFolder}", program);
 			}
+
 			if (
 				resolve &&
 				path &&

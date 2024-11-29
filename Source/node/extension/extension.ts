@@ -53,6 +53,7 @@ export function activate(context: vscode.ExtensionContext) {
 			Cluster.startSession(session),
 		),
 	);
+
 	context.subscriptions.push(
 		vscode.debug.onDidTerminateDebugSession((session) =>
 			Cluster.stopSession(session),
@@ -69,6 +70,7 @@ function toggleSkippingFile(res: string | number): void {
 
 	if (!resource) {
 		const activeEditor = vscode.window.activeTextEditor;
+
 		resource = activeEditor && activeEditor.document.fileName;
 	}
 
@@ -77,6 +79,7 @@ function toggleSkippingFile(res: string | number): void {
 			typeof resource === "string"
 				? { resource }
 				: { sourceReference: resource };
+
 		vscode.debug.activeDebugSession.customRequest(
 			"toggleSkipFileStatus",
 			args,

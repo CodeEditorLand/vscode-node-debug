@@ -40,15 +40,18 @@ export function getPidFromSession(
 						.then(
 							(reply) => {
 								clearTimeout(timer);
+
 								resolve(parseInt(reply.result));
 							},
 							(e) => {
 								clearTimeout(timer);
+
 								resolve(NaN);
 							},
 						);
 				} else {
 					clearTimeout(timer);
+
 					resolve(NaN);
 				}
 			},
@@ -87,6 +90,7 @@ export function initializeAutoAttach(context: vscode.ExtensionContext) {
 									"Auto attached ({0})",
 									pid,
 								);
+
 								attachToProcess(undefined, name, pid, args);
 							}
 						},
@@ -102,6 +106,7 @@ export function initializeAutoAttach(context: vscode.ExtensionContext) {
 			() => {
 				if (autoAttacher) {
 					autoAttacher.dispose();
+
 					autoAttacher = undefined;
 				}
 			},
@@ -142,31 +147,39 @@ export function attachToProcess(
 				if (typeof baseConfig.timeout === "number") {
 					config.timeout = baseConfig.timeout;
 				}
+
 				if (typeof baseConfig.sourceMaps === "boolean") {
 					config.sourceMaps = baseConfig.sourceMaps;
 				}
+
 				if (baseConfig.outFiles) {
 					config.outFiles = baseConfig.outFiles;
 				}
+
 				if (baseConfig.sourceMapPathOverrides) {
 					config.sourceMapPathOverrides =
 						baseConfig.sourceMapPathOverrides;
 				}
+
 				if (typeof baseConfig.smartStep === "boolean") {
 					config.smartStep = baseConfig.smartStep;
 				}
+
 				if (baseConfig.skipFiles) {
 					config.skipFiles = baseConfig.skipFiles;
 				}
+
 				if (typeof baseConfig.showAsyncStacks === "boolean") {
 					config.showAsyncStacks = baseConfig.showAsyncStacks;
 				}
+
 				if (
 					typeof baseConfig.trace === "boolean" ||
 					typeof baseConfig.trace === "string"
 				) {
 					config.trace = baseConfig.trace;
 				}
+
 				if (typeof baseConfig.stopOnEntry === "boolean") {
 					config.stopOnEntry = baseConfig.stopOnEntry;
 				}
@@ -201,6 +214,7 @@ function pollProcesses(
 
 	function poll() {
 		//const start = Date.now();
+
 		findChildProcesses(rootPid, inTerminal, cb).then((_) => {
 			//console.log(`duration: ${Date.now() - start}`);
 

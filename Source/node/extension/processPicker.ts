@@ -43,6 +43,7 @@ export async function attachProcess() {
 
 		return vscode.debug.startDebugging(undefined, config);
 	}
+
 	return undefined;
 }
 
@@ -64,22 +65,28 @@ export async function resolveProcessId(
 			// process id and protocol and port
 
 			const pid = Number(matches[2]);
+
 			putPidInDebugMode(pid);
 
 			// debug port
 			config.port = Number(matches[4]);
+
 			config.protocol = matches[3];
+
 			delete config.processId;
 		} else {
 			// protocol and port
 			if (matches[1]) {
 				// debug port
 				config.port = Number(matches[2]);
+
 				config.protocol = matches[1];
+
 				delete config.processId;
 			} else {
 				// process id
 				const pid = Number(matches[2]);
+
 				putPidInDebugMode(pid);
 
 				const debugType = await determineDebugTypeForPidInDebugMode(
@@ -90,10 +97,12 @@ export async function resolveProcessId(
 				if (debugType) {
 					// processID is handled, so turn this config into a normal port attach configuration
 					delete config.processId;
+
 					config.port =
 						debugType === "legacy-node2"
 							? INSPECTOR_PORT_DEFAULT
 							: LEGACY_PORT_DEFAULT;
+
 					config.protocol =
 						debugType === "legacy-node2" ? "inspector" : "legacy";
 				} else {
@@ -191,8 +200,11 @@ function listProcesses(ports: boolean): Promise<ProcessItem[]> {
 
 			if (ports) {
 				const x = analyseArguments(args);
+
 				usePort = x.usePort;
+
 				protocol = x.protocol;
+
 				port = x.port;
 			}
 
@@ -216,6 +228,7 @@ function listProcesses(ports: boolean): Promise<ProcessItem[]> {
 						port,
 					);
 				}
+
 				pidOrPort = `${protocol}${port}`;
 			} else {
 				if (protocol && port > 0) {
@@ -226,6 +239,7 @@ function listProcesses(ports: boolean): Promise<ProcessItem[]> {
 						port,
 						"SIGUSR1",
 					);
+
 					pidOrPort = `${pid}${protocol}${port}`;
 				} else {
 					// no port given
@@ -236,6 +250,7 @@ function listProcesses(ports: boolean): Promise<ProcessItem[]> {
 							pid,
 							"SIGUSR1",
 						);
+
 						pidOrPort = pid.toString();
 					}
 				}
@@ -266,6 +281,7 @@ function putPidInDebugMode(pid: number): void {
 			// But since we are running on Electron's node, process._debugProcess doesn't work (for unknown reasons).
 			// So we use a regular node instead:
 			const command = `node -e process._debugProcess(${pid})`;
+
 			execSync(command);
 		} else {
 			process.kill(pid, "SIGUSR1");

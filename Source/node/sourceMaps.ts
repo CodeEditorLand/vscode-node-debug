@@ -20,6 +20,7 @@ export interface MappingResult {
 	path: string; // absolute path
 	content?: string; // optional content of source (source inlined in source map)
 	line: number;
+
 	column: number;
 }
 
@@ -80,6 +81,7 @@ export class SourceMaps implements ISourceMaps {
 	);
 
 	private _session: NodeDebugSession;
+
 	private _sourceMapCache = new Map<string, Promise<SourceMap>>(); // all cached source maps
 	private _generatedToSourceMaps = new Map<string, SourceMap>(); // generated file -> SourceMap
 	private _sourceToGeneratedMaps = new Map<string, SourceMap>(); // source file -> SourceMap
@@ -163,6 +165,7 @@ export class SourceMaps implements ISourceMaps {
 							};
 						}
 					}
+
 					return null;
 				},
 			);
@@ -195,6 +198,7 @@ export class SourceMaps implements ISourceMaps {
 							Bias.LEAST_UPPER_BOUND,
 						);
 					}
+
 					if (
 						mr &&
 						mr.source &&
@@ -203,8 +207,10 @@ export class SourceMaps implements ISourceMaps {
 					) {
 						return false; // we have a corresponding source and could map line to it -> stop
 					}
+
 					return true; // we have a corresponding source but could not map line to it -> skip
 				}
+
 				return false; // no corresponding source -> stop
 			});
 		});
@@ -236,6 +242,7 @@ export class SourceMaps implements ISourceMaps {
 							Bias.LEAST_UPPER_BOUND,
 						);
 					}
+
 					if (
 						mr &&
 						mr.source &&
@@ -249,6 +256,7 @@ export class SourceMaps implements ISourceMaps {
 							column: mr.column,
 						};
 					}
+
 					return null; // we have a corresponding source but could not map line to it.
 				}
 				// no corresponding source.
@@ -315,6 +323,7 @@ export class SourceMaps implements ISourceMaps {
 						);
 					}
 				}
+
 				return map;
 			})
 			.then((map) => {
@@ -332,6 +341,7 @@ export class SourceMaps implements ISourceMaps {
 						);
 					}
 				}
+
 				return map;
 			})
 			.then((map) => {
@@ -339,6 +349,7 @@ export class SourceMaps implements ISourceMaps {
 					// remember found map for source key
 					this._sourceToGeneratedMaps.set(pathToSourceKey, map);
 				}
+
 				return map;
 			});
 	}
@@ -422,7 +433,9 @@ export class SourceMaps implements ISourceMaps {
 
 		for (
 			let l = lines.length - 1;
+
 			l >= Math.max(lines.length - 10, 0);
+
 			l--
 		) {
 			// only search for url in the last 10 lines
@@ -448,6 +461,7 @@ export class SourceMaps implements ISourceMaps {
 				}
 			}
 		}
+
 		return null;
 	}
 
@@ -472,6 +486,7 @@ export class SourceMaps implements ISourceMaps {
 		if (!promise) {
 			try {
 				promise = this._loadSourceMap(uri, pathToGenerated, hash);
+
 				this._sourceMapCache.set(hash, promise);
 			} catch (err) {
 				this._log(
@@ -539,6 +554,7 @@ export class SourceMaps implements ISourceMaps {
 					throw new Error(`exception while processing data url`);
 				}
 			}
+
 			throw new Error(`exception while processing data url`);
 		}
 
@@ -599,16 +615,20 @@ export class SourceMaps implements ISourceMaps {
 	private _registerSourceMap(map: SourceMap): SourceMap {
 		if (map) {
 			const genPath = PathUtils.pathNormalize(map.generatedPath());
+
 			this._generatedToSourceMaps.set(genPath, map);
 
 			const sourcePaths = map.allSourcePaths();
 
 			for (let path of sourcePaths) {
 				const key = PathUtils.pathNormalize(path);
+
 				this._sourceToGeneratedMaps.set(key, map);
+
 				this._log(`_registerSourceMap: ${key} -> ${genPath}`);
 			}
 		}
+
 		return map;
 	}
 
@@ -630,11 +650,13 @@ export class SourceMaps implements ISourceMaps {
 	private _writeFile(path: string, data: string): Promise<string> {
 		return new Promise((resolve, reject) => {
 			PathUtils.mkdirs(Path.dirname(path));
+
 			FS.writeFile(path, data, (err) => {
 				if (err) {
 					// ignore error
 					// reject(err);
 				}
+
 				resolve(data);
 			});
 		});
@@ -709,6 +731,7 @@ export class SourceMap {
 		} catch (e) {
 			// ignore exception and leave _smc undefined
 		}
+
 		return Promise.resolve(this);
 
 		/*
@@ -738,9 +761,12 @@ export class SourceMap {
 			if (!util.isAbsolute(name)) {
 				name = util.join(this._sourceRoot, name);
 			}
+
 			let path = this.absolutePath(name);
+
 			paths.push(path);
 		}
+
 		return paths;
 	}
 
@@ -775,6 +801,7 @@ export class SourceMap {
 
 			// map result back to absolute path
 			mp.source = this.absolutePath(mp.source);
+
 			mp.source = PathUtils.pathToNative(mp.source);
 		}
 
@@ -828,8 +855,10 @@ export class SourceMap {
 				// Windows drive letter must be prefixed with a slash
 				path = encodeURI("file:///" + path);
 			}
+
 			return path;
 		}
+
 		return dflt;
 	}
 
@@ -841,12 +870,14 @@ export class SourceMap {
 
 		if (path.indexOf(prefix) === 0) {
 			path = path.substr(prefix.length);
+
 			path = decodeURI(path);
 
 			if (/^\/[a-zA-Z]\:\//.test(path)) {
 				path = path.substr(1); // remove additional '/'
 			}
 		}
+
 		return path;
 	}
 
@@ -861,13 +892,16 @@ export class SourceMap {
 			if (!util.isAbsolute(name)) {
 				name = util.join(this._sourceRoot, name);
 			}
+
 			let path = this.absolutePath(name);
+
 			path = PathUtils.pathNormalize(path);
 
 			if (absPath === path) {
 				return name;
 			}
 		}
+
 		return null;
 	}
 
@@ -879,6 +913,7 @@ export class SourceMap {
 		if (!util.isAbsolute(path)) {
 			path = util.join(this._sourcemapLocation, path);
 		}
+
 		return this.unfixPath(path);
 	}
 }

@@ -65,6 +65,7 @@ function detectProtocolForAttach(
 			socket.write(
 				`"Content-Length: 50\r\n\r\n{"command":"disconnect","type":"request","seq":2}"`,
 			);
+
 			socket.end();
 		} catch (e) {
 			// ignore failure
@@ -84,12 +85,14 @@ function detectProtocolForAttach(
 					logger.debug(
 						"Debugging with inspector protocol because it was detected.",
 					);
+
 					protocol = "inspector";
 				} else {
 					reason = localize(
 						"protocol.switch.legacy.detected",
 						"Debugging with legacy protocol because it was detected.",
 					);
+
 					protocol = "legacy";
 				}
 
@@ -101,6 +104,7 @@ function detectProtocolForAttach(
 			});
 
 			socket.connect(port, address);
+
 			socket.on("connect", () => {
 				// Send a safe request to trigger a response from the inspector protocol
 				socket.write(
@@ -129,6 +133,7 @@ function detectProtocolForAttach(
 
 			if (result.reason) {
 				writeToConsole(result.reason);
+
 				logger.debug(result.reason);
 			}
 
@@ -153,6 +158,7 @@ function detectProtocolForLaunch(
 		if (config.env) {
 			env = extendObject(extendObject({}, process.env), config.env);
 		}
+
 		const result = WSL.spawnSync(config.useWSL, "node", ["--version"], {
 			shell: true,
 			env: env,
@@ -182,6 +188,7 @@ function detectProtocolForLaunch(
 						config.__nodeVersion,
 					),
 				);
+
 				logger.debug(
 					`Debugging with legacy protocol because Node.js ${config.__nodeVersion} was detected.`,
 				);
@@ -210,6 +217,7 @@ function semVerStringToInt(vString: string): number {
 			parseInt(match[3])
 		);
 	}
+
 	return -1;
 }
 
@@ -298,6 +306,7 @@ export interface DebugArguments {
 	usePort: boolean; // if true debug by using the debug port
 	protocol?: "legacy" | "inspector"; //
 	address?: string;
+
 	port: number;
 }
 
@@ -325,9 +334,11 @@ export function analyseArguments(args: string): DebugArguments {
 		if (matches.length >= 6 && matches[5]) {
 			result.address = matches[5];
 		}
+
 		if (matches.length >= 7 && matches[6]) {
 			result.port = parseInt(matches[6]);
 		}
+
 		result.protocol = matches[1] === "debug" ? "legacy" : "inspector";
 	}
 
@@ -337,6 +348,7 @@ export function analyseArguments(args: string): DebugArguments {
 	if (matches && matches.length === 3) {
 		// override port
 		result.port = parseInt(matches[2]);
+
 		result.protocol = matches[1] === "debug" ? "legacy" : "inspector";
 	}
 

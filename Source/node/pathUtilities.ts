@@ -36,6 +36,7 @@ export function makeRelative(target: string, path: string): string {
 	for (; i < p.length; i++) {
 		result = Path.join(result, p[i]);
 	}
+
 	return result;
 }
 
@@ -48,6 +49,7 @@ export function normalizeDriveLetter(path: string): string {
 	if (regex.test(path)) {
 		path = path.replace(regex, (s, s1, s2) => s1.toLowerCase() + s2);
 	}
+
 	return path;
 }
 
@@ -61,6 +63,7 @@ export function pathNormalize(path: string): string {
 	if (process.platform === "win32" || process.platform === "darwin") {
 		path = path.toLowerCase();
 	}
+
 	return path;
 }
 
@@ -71,6 +74,7 @@ export function pathToNative(path: string): string {
 	if (process.platform === "win32") {
 		path = path.replace(/\//g, "\\");
 	}
+
 	return path;
 }
 
@@ -95,8 +99,10 @@ export function realPath(path: string): string | null {
 		if (/^[A-Z]\:\\$/.test(path)) {
 			path = path.toLowerCase();
 		}
+
 		return path;
 	}
+
 	let name = Path.basename(path).toLowerCase();
 
 	try {
@@ -124,6 +130,7 @@ export function realPath(path: string): string | null {
 	} catch (error) {
 		// silently ignore error
 	}
+
 	return null;
 }
 
@@ -133,6 +140,7 @@ export function realPath(path: string): string | null {
 export function mkdirs(path: string) {
 	if (!FS.existsSync(path)) {
 		mkdirs(Path.dirname(path));
+
 		FS.mkdirSync(path);
 	}
 }
@@ -147,6 +155,7 @@ export function findOnPath(program: string, args_env: any): string | undefined {
 
 	if (process.platform === "win32") {
 		const windir = env["WINDIR"] || "C:\\Windows";
+
 		locator = Path.join(windir, "System32", "where.exe");
 	} else {
 		locator = "/usr/bin/which";
@@ -175,10 +184,12 @@ export function findOnPath(program: string, args_env: any): string | undefined {
 					return lines[0];
 				}
 			}
+
 			return undefined;
 		} else {
 			// do not report failure if 'locator' app doesn't exist
 		}
+
 		return program;
 	} catch (err) {
 		// fall through
@@ -216,6 +227,7 @@ export function findExecutable(
 	if (FS.existsSync(program)) {
 		return program;
 	}
+
 	return undefined;
 }
 
@@ -229,10 +241,12 @@ export function isAbsolutePath(path: string | null): boolean {
 		if (path.charAt(0) === "/") {
 			return true;
 		}
+
 		if (/^[a-zA-Z]\:[\\\/]/.test(path)) {
 			return true;
 		}
 	}
+
 	return false;
 }
 
@@ -246,6 +260,7 @@ export function normalize(path: string): string {
 	if (/^[a-zA-Z]\:\//.test(path)) {
 		path = "/" + path;
 	}
+
 	path = Path.normalize(path); // use node's normalize to remove '<dir>/..' etc.
 	path = path.replace(/\\/g, "/");
 
@@ -259,6 +274,7 @@ export function toWindows(path: string): string {
 	if (/^\/[a-zA-Z]\:\//.test(path)) {
 		path = path.substr(1);
 	}
+
 	path = path.replace(/\//g, "\\");
 
 	return path;
@@ -269,6 +285,7 @@ export function toWindows(path: string): string {
  */
 export function join(absPath: string, relPath: string): string {
 	absPath = normalize(absPath);
+
 	relPath = normalize(relPath);
 
 	if (absPath.charAt(absPath.length - 1) === "/") {
@@ -276,7 +293,9 @@ export function join(absPath: string, relPath: string): string {
 	} else {
 		absPath = absPath + "/" + relPath;
 	}
+
 	absPath = Path.normalize(absPath);
+
 	absPath = absPath.replace(/\\/g, "/");
 
 	return absPath;
@@ -287,6 +306,7 @@ export function join(absPath: string, relPath: string): string {
  */
 export function makeRelative2(from: string, to: string): string {
 	from = normalize(from);
+
 	to = normalize(to);
 
 	const froms = from.substr(1).split("/");
@@ -295,6 +315,7 @@ export function makeRelative2(from: string, to: string): string {
 
 	while (froms.length > 0 && tos.length > 0 && froms[0] === tos[0]) {
 		froms.shift();
+
 		tos.shift();
 	}
 
@@ -306,8 +327,10 @@ export function makeRelative2(from: string, to: string): string {
 
 	while (l > 0) {
 		tos.unshift("..");
+
 		l--;
 	}
+
 	return tos.join("/");
 }
 
@@ -315,6 +338,7 @@ export function makeRelative2(from: string, to: string): string {
 
 interface IGlobTask {
 	pattern: string;
+
 	opts: any;
 }
 
@@ -376,6 +400,7 @@ export function multiGlob(patterns: string[], opts?): Promise<string[]> {
 				set.add(p);
 			}
 		}
+
 		let array = new Array<string>();
 
 		set.forEach((v) => array.push(Path.posix.normalize(v)));
@@ -393,8 +418,10 @@ export function multiGlobMatches(patterns: string[], path: string): boolean {
 		if (matched !== isExclude) {
 			break;
 		}
+
 		matched = minimatch(path, p);
 	}
+
 	return matched;
 }
 
@@ -414,6 +441,7 @@ export function extendObject<T extends object>(
 			}
 		}
 	}
+
 	return toObject;
 }
 
@@ -421,5 +449,6 @@ export function stripBOM(s: string): string {
 	if (s && s[0] === "\uFEFF") {
 		s = s.substr(1);
 	}
+
 	return s;
 }

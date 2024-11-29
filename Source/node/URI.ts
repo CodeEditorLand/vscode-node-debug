@@ -21,6 +21,7 @@ function stripLast(path: string, c: string) {
 
 export class URI {
 	private _uri: string;
+
 	private _u: URL.Url;
 
 	/**
@@ -70,6 +71,7 @@ export class URI {
 		path = encodeURI("file://" + path);
 
 		const u = new URI();
+
 		u._uri = path;
 
 		try {
@@ -77,6 +79,7 @@ export class URI {
 		} catch (e) {
 			throw new Error(e);
 		}
+
 		return u;
 	}
 
@@ -91,6 +94,7 @@ export class URI {
 			uri.indexOf("data:") === 0
 		) {
 			const u = new URI();
+
 			u._uri = uri;
 
 			try {
@@ -98,8 +102,10 @@ export class URI {
 			} catch (e) {
 				throw new Error(e);
 			}
+
 			return u;
 		}
+
 		return URI.file(uri, base);
 	}
 
@@ -115,12 +121,14 @@ export class URI {
 
 	filePath(): string {
 		let path = <string>this._u.path;
+
 		path = decodeURI(path);
 
 		if (/^\/[a-zA-Z]\:\//.test(path)) {
 			path = path.substr(1); // remove additional '/'
 			path = path.replace(/\//g, "\\"); // convert slashes to backslashes
 		}
+
 		return path;
 	}
 
@@ -138,6 +146,7 @@ export class URI {
 		if (pos > 0) {
 			return this._uri.substr(pos + 1);
 		}
+
 		return null;
 	}
 
